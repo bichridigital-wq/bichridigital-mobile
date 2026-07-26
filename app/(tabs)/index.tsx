@@ -1,70 +1,209 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppShell } from '@/components/app-shell';
-import { FeaturePill } from '@/components/ui/feature-pill';
-import { SectionCard } from '@/components/ui/section-card';
+import { HeroCard } from '@/components/home/hero-card';
+import { LiveCard } from '@/components/home/live-card';
+import { ShowCard } from '@/components/home/show-card';
+import { UpcomingProgramCard } from '@/components/home/upcoming-program-card';
+import { VideoCard } from '@/components/home/video-card';
+import { SectionHeader } from '@/components/ui/section-header';
+import { featuredHero, liveProgram, popularShows, recentVideos, upcomingPrograms } from '@/constants/mock-content';
 import { theme } from '@/constants/theme';
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <AppShell
-      title="Accueil"
-      subtitle="Le média digital bichri, pensé pour un rendu moderne et rapide."
-    >
-      <View style={styles.hero}>
-        <Text style={styles.heroTitle}>BichriDigital</Text>
-        <Text style={styles.heroSubtitle}>
-          Un hub moderne pour suivre l’actualité, les émissions et les contenus du moment.
-        </Text>
-        <View style={styles.pills}>
-          <FeaturePill label="Direct" />
-          <FeaturePill label="Émissions" />
-          <FeaturePill label="Replays" />
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.brand}>BichriDigital</Text>
+          <Text style={styles.subtitle}>Culture, parole et contenus en mouvement</Text>
+        </View>
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Rechercher">
+            <Text style={styles.iconText}>⌕</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Notifications">
+            <Text style={styles.iconText}>🔔</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
-      <SectionCard title="À l’affiche" subtitle="Le fil du moment">
-        <Text style={styles.cardText}>
-          Découvrez le contenu phare de la journée avec une interface claire, rapide et pensée mobile.
-        </Text>
-      </SectionCard>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
+        <HeroCard
+          category={featuredHero.category}
+          title={featuredHero.title}
+          description={featuredHero.description}
+          ctaPrimary={featuredHero.ctaPrimary}
+          ctaSecondary={featuredHero.ctaSecondary}
+          accent={featuredHero.accent}
+        />
 
-      <SectionCard title="Ce que vous pourrez retrouver" subtitle="Version initiale">
-        <Text style={styles.cardText}>
-          Accueil, direct, émissions, replays et plus, dans une architecture prête pour évoluer.
-        </Text>
-      </SectionCard>
-    </AppShell>
+        <View style={styles.section}>
+          <SectionHeader title="En direct" actionLabel="Voir" />
+          <LiveCard
+            title={liveProgram.title}
+            subtitle={liveProgram.subtitle}
+            timeLabel={liveProgram.timeLabel}
+            accent={liveProgram.accent}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="À venir" actionLabel="Tout voir" />
+          <View style={styles.horizontalList}>
+            {upcomingPrograms.map((program) => (
+              <UpcomingProgramCard
+                key={program.id}
+                title={program.title}
+                subtitle={program.subtitle}
+                timeLabel={program.timeLabel}
+                dateLabel={program.dateLabel}
+                accent={program.accent}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="Dernières vidéos" actionLabel="Voir tout" />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.videoList}>
+            {recentVideos.map((video) => (
+              <VideoCard
+                key={video.id}
+                title={video.title}
+                program={video.program}
+                duration={video.duration}
+                relativeTime={video.relativeTime}
+                accent={video.accent}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="Émissions populaires" actionLabel="Voir toutes" />
+          <View style={styles.showGrid}>
+            {popularShows.map((show) => (
+              <ShowCard
+                key={show.id}
+                title={show.title}
+                subtitle={show.subtitle}
+                accent={show.accent}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.footerCard}>
+          <Text style={styles.footerTitle}>Bichridigital</Text>
+          <Text style={styles.footerText}>Votre histoire, image par image.</Text>
+          <TouchableOpacity style={styles.footerButton} accessibilityRole="button" accessibilityLabel="Découvrir nos services">
+            <Text style={styles.footerButtonText}>Découvrir nos services</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 28,
-    padding: theme.spacing.xl,
-    gap: theme.spacing.sm,
+  screen: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  heroTitle: {
+  header: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  brand: {
     color: theme.colors.text,
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
-    letterSpacing: -0.5,
   },
-  heroSubtitle: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 15,
-    lineHeight: 22,
+  subtitle: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    marginTop: 4,
   },
-  pills: {
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  iconText: {
+    color: theme.colors.text,
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+    gap: theme.spacing.lg,
+  },
+  section: {
+    gap: 10,
+  },
+  horizontalList: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  videoList: {
+    gap: 12,
+    paddingRight: 8,
+  },
+  showGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
+    gap: 12,
   },
-  cardText: {
+  footerCard: {
+    borderRadius: 24,
+    padding: 20,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: 8,
+  },
+  footerTitle: {
     color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  footerText: {
+    color: theme.colors.muted,
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 20,
+  },
+  footerButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  footerButtonText: {
+    color: theme.colors.text,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
