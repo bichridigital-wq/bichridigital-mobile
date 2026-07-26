@@ -55,7 +55,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Ã€ venir" actionLabel="Tout voir" />
+          <SectionHeader title="À venir" actionLabel="Tout voir" />
           <View style={styles.horizontalList}>
             {upcomingPrograms.map((program) => (
               <UpcomingProgramCard
@@ -71,7 +71,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="DerniÃ¨res vidÃ©os" actionLabel="Voir tout" />
+          <SectionHeader title="Dernières vidéos" actionLabel="Voir tout" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.videoList}>
             {recentVideos.map((video) => (
               <VideoCard
@@ -87,7 +87,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Ã‰missions populaires" actionLabel="Voir tout" />
+          <SectionHeader title="Émissions populaires" actionLabel="Voir tout" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.showList}>
             {popularShows.map((show) => (
               <ShowCard
@@ -103,8 +103,8 @@ export default function HomeScreen() {
         <View style={styles.footerCard}>
           <Text style={styles.footerTitle}>Bichridigital</Text>
           <Text style={styles.footerText}>Votre histoire, image par image.</Text>
-          <TouchableOpacity style={styles.footerButton} accessibilityRole="button" accessibilityLabel="DÃ©couvrir nos services">
-            <Text style={styles.footerButtonText}>DÃ©couvrir nos services</Text>
+          <TouchableOpacity style={styles.footerButton} accessibilityRole="button" accessibilityLabel="Découvrir nos services">
+            <Text style={styles.footerButtonText}>Découvrir nos services</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
