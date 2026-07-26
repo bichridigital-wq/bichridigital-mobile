@@ -24,7 +24,6 @@ export function LiveCard({ title, subtitle, timeLabel, accent, isLive = true }: 
       <View style={styles.content}>
         <View style={styles.textBlock}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
           <Text style={styles.time}>{timeLabel}</Text>
         </View>
         <TouchableOpacity

@@ -24,6 +24,7 @@ export function ShowCard({ title, subtitle, accent }: ShowCardProps) {
 const styles = StyleSheet.create({
   card: {
     width: 160,
+    flexShrink: 0,
     borderRadius: 20,
     padding: 12,
     backgroundColor: theme.colors.card,

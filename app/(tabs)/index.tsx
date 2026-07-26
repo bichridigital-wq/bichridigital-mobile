@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,16 +17,16 @@ export default function HomeScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.brand}>BichriDigital</Text>
+        <View style={styles.headerTextBlock}>
+          <Text style={styles.brand}>Bichridigital</Text>
           <Text style={styles.subtitle}>Culture, parole et contenus en mouvement</Text>
         </View>
         <View style={styles.actions}>
           <TouchableOpacity style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Rechercher">
-            <Text style={styles.iconText}>⌕</Text>
+            <Ionicons name="search-outline" size={18} color={theme.colors.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Notifications">
-            <Text style={styles.iconText}>🔔</Text>
+            <Ionicons name="notifications-outline" size={18} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -54,7 +55,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="À venir" actionLabel="Tout voir" />
+          <SectionHeader title="Ã€ venir" actionLabel="Tout voir" />
           <View style={styles.horizontalList}>
             {upcomingPrograms.map((program) => (
               <UpcomingProgramCard
@@ -70,7 +71,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Dernières vidéos" actionLabel="Voir tout" />
+          <SectionHeader title="DerniÃ¨res vidÃ©os" actionLabel="Voir tout" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.videoList}>
             {recentVideos.map((video) => (
               <VideoCard
@@ -86,8 +87,8 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Émissions populaires" actionLabel="Voir toutes" />
-          <View style={styles.showGrid}>
+          <SectionHeader title="Ã‰missions populaires" actionLabel="Voir tout" />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.showList}>
             {popularShows.map((show) => (
               <ShowCard
                 key={show.id}
@@ -96,14 +97,14 @@ export default function HomeScreen() {
                 accent={show.accent}
               />
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         <View style={styles.footerCard}>
           <Text style={styles.footerTitle}>Bichridigital</Text>
           <Text style={styles.footerText}>Votre histoire, image par image.</Text>
-          <TouchableOpacity style={styles.footerButton} accessibilityRole="button" accessibilityLabel="Découvrir nos services">
-            <Text style={styles.footerButtonText}>Découvrir nos services</Text>
+          <TouchableOpacity style={styles.footerButton} accessibilityRole="button" accessibilityLabel="DÃ©couvrir nos services">
+            <Text style={styles.footerButtonText}>DÃ©couvrir nos services</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -118,10 +119,15 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerTextBlock: {
+    flex: 1,
+    paddingRight: theme.spacing.sm,
   },
   brand: {
     color: theme.colors.text,
@@ -156,7 +162,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: 120,
     gap: theme.spacing.lg,
   },
   section: {
@@ -170,10 +177,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingRight: 8,
   },
-  showGrid: {
+  showList: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
+    paddingRight: 8,
   },
   footerCard: {
     borderRadius: 24,

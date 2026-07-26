@@ -32,8 +32,8 @@ export const featuredHero = {
 export const liveProgram = {
   id: 'live-1',
   title: 'Jotaayu Bichri',
-  subtitle: 'Direct en cours',
-  timeLabel: '19:30 • En direct',
+  subtitle: 'À l’antenne',
+  timeLabel: 'Depuis 19:30',
   accent: '#FCCD12',
 };
 
