@@ -1,4 +1,11 @@
-import type { LiveBroadcast, Playlist, Video } from '@/types/youtube';
+import { YOUTUBE_DATA_MODE } from '@/config/api';
+import { apiGet } from '@/services/api-client';
+import type {
+  ApiResponse,
+  LiveBroadcast,
+  Playlist,
+  Video,
+} from '@/types/youtube';
 
 const mockPlaylists: Playlist[] = [
   {
@@ -91,22 +98,56 @@ const mockLiveBroadcast: LiveBroadcast = {
   status: 'upcoming',
 };
 
+async function getRemoteData<T>(path: string): Promise<T> {
+  const response = await apiGet<ApiResponse<T>>(path);
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return response.data;
+}
+
 export function getFeaturedVideos(): Promise<Video[]> {
-  return Promise.resolve(mockVideos.slice(0, 2));
+  if (YOUTUBE_DATA_MODE === 'mock') {
+    return Promise.resolve(mockVideos.slice(0, 2));
+  }
+
+  return getRemoteData<Video[]>('/youtube/videos/featured');
 }
 
 export function getLatestVideos(): Promise<Video[]> {
-  return Promise.resolve([...mockVideos]);
+  if (YOUTUBE_DATA_MODE === 'mock') {
+    return Promise.resolve([...mockVideos]);
+  }
+
+  return getRemoteData<Video[]>('/youtube/videos/latest');
 }
 
 export function getPlaylists(): Promise<Playlist[]> {
-  return Promise.resolve([...mockPlaylists]);
+  if (YOUTUBE_DATA_MODE === 'mock') {
+    return Promise.resolve([...mockPlaylists]);
+  }
+
+  return getRemoteData<Playlist[]>('/youtube/playlists');
 }
 
 export function getLiveBroadcast(): Promise<LiveBroadcast | null> {
-  return Promise.resolve(mockLiveBroadcast);
+  if (YOUTUBE_DATA_MODE === 'mock') {
+    return Promise.resolve(mockLiveBroadcast);
+  }
+
+  return getRemoteData<LiveBroadcast | null>('/youtube/live');
 }
 
 export function getPlaylistVideos(playlistId: string): Promise<Video[]> {
-  return Promise.resolve(mockVideos.filter((video) => video.playlistId === playlistId));
+  if (YOUTUBE_DATA_MODE === 'mock') {
+    return Promise.resolve(
+      mockVideos.filter((video) => video.playlistId === playlistId),
+    );
+  }
+
+  return getRemoteData<Video[]>(
+    `/youtube/playlists/${encodeURIComponent(playlistId)}/videos`,
+  );
 }

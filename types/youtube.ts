@@ -36,3 +36,9 @@ export interface Channel {
   subscriberCount?: number;
   videoCount?: number;
 }
+
+export interface ApiResponse<T> {
+  data: T;
+  error?: string;
+  source?: string;
+}
