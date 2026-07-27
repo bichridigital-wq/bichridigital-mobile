@@ -18,9 +18,10 @@ export type Replay = {
   category: ReplayCategory;
   duration: string;
   publishedAt: string;
+  thumbnailUrl?: string;
   coverColor: string;
   featured: boolean;
-  status: 'Disponible';
+  status: 'Disponible' | 'En direct';
 };
 
 export const replays: Replay[] = [
