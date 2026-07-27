@@ -1,44 +1,129 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppShell } from '@/components/app-shell';
-import { SectionCard } from '@/components/ui/section-card';
+import { CategoryPill } from '@/components/emissions/category-pill';
+import { EmissionCard } from '@/components/emissions/emission-card';
+import { EmptySearchState } from '@/components/emissions/empty-search-state';
+import { FeaturedShowCard } from '@/components/emissions/featured-show-card';
+import { ShowSearchBar } from '@/components/emissions/show-search-bar';
+import { categories, emissions, featuredEmission } from '@/constants/emissions-content';
 import { theme } from '@/constants/theme';
 
 export default function EmissionsScreen() {
-  return (
-    <AppShell title="Émissions" subtitle="Retrouvez les programmes à découvrir.">
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Programme phare</Text>
-        <Text style={styles.panelText}>Une section dédiée à vos émissions, avec un design épuré et modulaire.</Text>
-      </View>
+  const insets = useSafeAreaInsets();
+  const [activeCategory, setActiveCategory] = useState('Toutes');
+  const [query, setQuery] = useState('');
 
-      <SectionCard title="Prochains rendez-vous" subtitle="À venir">
-        <Text style={styles.cardText}>Le contenu sera ajouté ici au fur et à mesure du développement.</Text>
-      </SectionCard>
-    </AppShell>
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredEmissions = useMemo(() => {
+    return emissions.filter((item) => {
+      const matchesCategory = activeCategory === 'Toutes' || item.category === activeCategory;
+      const matchesQuery = item.title.toLowerCase().includes(normalizedQuery);
+      return matchesCategory && matchesQuery;
+    });
+  }, [activeCategory, normalizedQuery]);
+
+  return (
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Émissions</Text>
+            <Text style={styles.subtitle}>Découvrez les programmes et les archives de Bichridigital.</Text>
+          </View>
+        </View>
+
+        <View style={styles.content}>
+          <ShowSearchBar value={query} onChangeText={setQuery} />
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pills}>
+            {categories.map((category) => (
+              <CategoryPill
+                key={category}
+                label={category}
+                active={activeCategory === category}
+                onPress={() => setActiveCategory(category)}
+              />
+            ))}
+          </ScrollView>
+
+          <FeaturedShowCard title={featuredEmission.title} category={featuredEmission.category} accent={featuredEmission.coverColor} />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Toutes les émissions</Text>
+            {filteredEmissions.length > 0 ? (
+              <View style={styles.list}>
+                {filteredEmissions.map((item) => (
+                  <EmissionCard
+                    key={item.id}
+                    title={item.title}
+                    category={item.category}
+                    accent={item.coverColor}
+                    highlighted={item.id === featuredEmission.id}
+                    status={item.status}
+                  />
+                ))}
+              </View>
+            ) : (
+              <EmptySearchState />
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  panel: {
-    backgroundColor: 'rgba(0,36,255,0.16)',
-    borderRadius: 20,
-    padding: theme.spacing.lg,
-    gap: 6,
+  screen: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  panelTitle: {
+  header: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.sm,
+  },
+  headerText: {
+    gap: 4,
+  },
+  title: {
     color: theme.colors.text,
-    fontSize: 18,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  subtitle: {
+    color: theme.colors.muted,
+    fontSize: 12,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 140,
+  },
+  content: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+    gap: theme.spacing.md,
+  },
+  pills: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  section: {
+    gap: 10,
+  },
+  sectionTitle: {
+    color: theme.colors.text,
+    fontSize: 16,
     fontWeight: '700',
   },
-  panelText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  cardText: {
-    color: theme.colors.text,
-    fontSize: 14,
-    lineHeight: 21,
+  list: {
+    gap: 10,
   },
 });
