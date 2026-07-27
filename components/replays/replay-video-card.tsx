@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Replay } from '@/constants/replays-content';
@@ -13,6 +14,14 @@ export function ReplayVideoCard({ replay, compact = false }: ReplayVideoCardProp
   return (
     <View accessibilityLabel={`${replay.title}, ${replay.showTitle}`} style={[styles.card, compact ? styles.compactCard : styles.horizontalCard]}>
       <View style={[styles.thumbnail, { backgroundColor: replay.coverColor }]}>
+        {replay.thumbnailUrl ? (
+          <Image
+            accessible={false}
+            contentFit="cover"
+            source={replay.thumbnailUrl}
+            style={styles.thumbnailImage}
+          />
+        ) : null}
         <View style={styles.thumbnailShade} />
         <View style={styles.playIcon}>
           <Ionicons name="play" size={14} color={theme.colors.text} />
@@ -57,6 +66,9 @@ const styles = StyleSheet.create({
   thumbnailShade: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(2,11,46,0.22)',
+  },
+  thumbnailImage: {
+    ...StyleSheet.absoluteFillObject,
   },
   playIcon: {
     width: 36,

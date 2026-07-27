@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Replay } from '@/constants/replays-content';
@@ -12,6 +13,14 @@ export function FeaturedReplayCard({ replay }: FeaturedReplayCardProps) {
   return (
     <View style={styles.card}>
       <View style={[styles.cover, { backgroundColor: replay.coverColor }]}>
+        {replay.thumbnailUrl ? (
+          <Image
+            accessible={false}
+            contentFit="cover"
+            source={replay.thumbnailUrl}
+            style={styles.coverImage}
+          />
+        ) : null}
         <View style={styles.coverShade} />
         <View style={styles.badge}>
           <Text style={styles.badgeText}>À LA UNE</Text>
@@ -63,6 +72,9 @@ const styles = StyleSheet.create({
   coverShade: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(2,11,46,0.28)',
+  },
+  coverImage: {
+    ...StyleSheet.absoluteFillObject,
   },
   badge: {
     position: 'absolute',

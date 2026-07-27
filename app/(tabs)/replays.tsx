@@ -9,47 +9,10 @@ import { ReplaySearchBar } from '@/components/replays/replay-search-bar';
 import { ReplayVideoCard } from '@/components/replays/replay-video-card';
 import {
   replayCategories,
-  type Replay,
-  type ReplayCategory,
 } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
 import { useFeaturedVideos, useLatestVideos } from '@/hooks/use-youtube';
-import type { Video } from '@/types/youtube';
-
-const playlistCategories: Record<string, ReplayCategory> = {
-  'mock-playlist-religion-001': 'Religion',
-  'mock-playlist-magazine-001': 'Magazine',
-  'mock-playlist-culture-001': 'Culture',
-};
-
-const categoryColors: Record<ReplayCategory, string> = {
-  Actualité: '#536DFE',
-  Religion: '#FCCD12',
-  Culture: '#C47A2C',
-  Magazine: '#0024FF',
-  Santé: '#19B88A',
-  Sport: '#E53935',
-  Histoire: '#8D6E63',
-};
-
-function adaptYoutubeVideo(video: Video, featured: boolean): Replay {
-  const category = video.playlistId
-    ? playlistCategories[video.playlistId] ?? 'Magazine'
-    : 'Magazine';
-
-  return {
-    id: video.id,
-    title: video.title,
-    showTitle: video.channelTitle,
-    category,
-    duration: video.duration,
-    publishedAt: video.publishedAt,
-    thumbnailUrl: video.thumbnailUrl,
-    coverColor: categoryColors[category],
-    featured,
-    status: video.isLive ? 'En direct' : 'Disponible',
-  };
-}
+import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
 
 export default function ReplaysScreen() {
   const insets = useSafeAreaInsets();
