@@ -1,44 +1,159 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppShell } from '@/components/app-shell';
-import { SectionCard } from '@/components/ui/section-card';
+import { FeaturedReplayCard } from '@/components/replays/featured-replay-card';
+import { ReplayCategoryChip } from '@/components/replays/replay-category-chip';
+import { ReplayEmptyState } from '@/components/replays/replay-empty-state';
+import { ReplaySearchBar } from '@/components/replays/replay-search-bar';
+import { ReplayVideoCard } from '@/components/replays/replay-video-card';
+import { replayCategories, replays } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
 
 export default function ReplaysScreen() {
-  return (
-    <AppShell title="Replays" subtitle="Consultez les contenus déjà diffusés.">
-      <View style={styles.panel}>
-        <Text style={styles.panelTitle}>Archivage rapide</Text>
-        <Text style={styles.panelText}>Cette section permet de regrouper les replays avec une présentation lisible et moderne.</Text>
-      </View>
+  const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<(typeof replayCategories)[number]>('Toutes');
 
-      <SectionCard title="Derniers contenus" subtitle="Historique">
-        <Text style={styles.cardText}>Le catalogue de replays sera enrichi dans les prochaines étapes.</Text>
-      </SectionCard>
-    </AppShell>
+  const normalizedQuery = query.trim().toLocaleLowerCase('fr');
+  const filteredReplays = useMemo(
+    () =>
+      replays.filter((replay) => {
+        const matchesCategory = activeCategory === 'Toutes' || replay.category === activeCategory;
+        const searchableText = `${replay.title} ${replay.showTitle}`.toLocaleLowerCase('fr');
+        return matchesCategory && searchableText.includes(normalizedQuery);
+      }),
+    [activeCategory, normalizedQuery],
+  );
+
+  const featuredReplay = filteredReplays.find((replay) => replay.featured);
+  const latestReplays = filteredReplays.filter((replay) => !replay.featured).slice(0, 5);
+  const hasActiveFilters = normalizedQuery.length > 0 || activeCategory !== 'Toutes';
+
+  const resetFilters = () => {
+    setQuery('');
+    setActiveCategory('Toutes');
+  };
+
+  return (
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}>
+        <View style={styles.header}>
+          <Text style={styles.screenTitle}>Replays</Text>
+          <Text style={styles.subtitle}>Retrouvez les émissions et les moments forts de Bichridigital.</Text>
+        </View>
+
+        <View style={styles.content}>
+          <ReplaySearchBar value={query} onChangeText={setQuery} onClear={() => setQuery('')} />
+
+          <ScrollView
+            horizontal
+            contentContainerStyle={styles.categories}
+            showsHorizontalScrollIndicator={false}>
+            {replayCategories.map((category) => (
+              <ReplayCategoryChip
+                key={category}
+                active={activeCategory === category}
+                label={category}
+                onPress={() => setActiveCategory(category)}
+              />
+            ))}
+          </ScrollView>
+
+          {filteredReplays.length === 0 ? (
+            <ReplayEmptyState canReset={hasActiveFilters} onReset={resetFilters} />
+          ) : (
+            <>
+              {featuredReplay ? (
+                <View style={styles.section}>
+                  <FeaturedReplayCard replay={featuredReplay} />
+                </View>
+              ) : null}
+
+              {latestReplays.length > 0 ? (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Dernières vidéos</Text>
+                  <ScrollView
+                    horizontal
+                    contentContainerStyle={styles.latestList}
+                    showsHorizontalScrollIndicator={false}>
+                    {latestReplays.map((replay) => (
+                      <ReplayVideoCard key={replay.id} replay={replay} />
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Tous les replays</Text>
+                <View style={styles.grid}>
+                  {filteredReplays.map((replay) => (
+                    <ReplayVideoCard key={replay.id} compact replay={replay} />
+                  ))}
+                </View>
+              </View>
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  panel: {
-    backgroundColor: 'rgba(252,205,18,0.16)',
-    borderRadius: 20,
-    padding: theme.spacing.lg,
-    gap: 6,
+  screen: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  panelTitle: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 140,
+  },
+  header: {
+    gap: 4,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.sm,
+  },
+  screenTitle: {
     color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
   },
-  panelText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 14,
-    lineHeight: 21,
+  subtitle: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
   },
-  cardText: {
+  content: {
+    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+  },
+  categories: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
     color: theme.colors.text,
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  latestList: {
+    gap: 12,
+    paddingRight: 8,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
   },
 });
