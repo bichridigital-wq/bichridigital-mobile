@@ -7,11 +7,16 @@ import { theme } from '@/constants/theme';
 
 type FeaturedReplayCardProps = {
   replay: Replay;
+  onPress: () => void;
 };
 
-export function FeaturedReplayCard({ replay }: FeaturedReplayCardProps) {
+export function FeaturedReplayCard({ replay, onPress }: FeaturedReplayCardProps) {
   return (
-    <View style={styles.card}>
+    <Pressable
+      accessibilityLabel={`Regarder ${replay.title}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.pressedCard]}>
       <View style={[styles.cover, { backgroundColor: replay.coverColor }]}>
         {replay.thumbnailUrl ? (
           <Image
@@ -43,16 +48,18 @@ export function FeaturedReplayCard({ replay }: FeaturedReplayCardProps) {
           <Text style={styles.meta}>{replay.publishedAt}</Text>
         </View>
         <Pressable
-          accessibilityLabel={`Lecture de ${replay.title} bientôt disponible`}
+          accessibilityLabel={`Regarder ${replay.title}`}
           accessibilityRole="button"
-          accessibilityState={{ disabled: true }}
-          disabled
-          style={styles.watchButton}>
-          <Ionicons name="time-outline" size={16} color={theme.colors.muted} />
-          <Text style={styles.watchText}>Lecture bientôt disponible</Text>
+          onPress={(event) => {
+            event.stopPropagation();
+            onPress();
+          }}
+          style={({ pressed }) => [styles.watchButton, pressed && styles.pressedButton]}>
+          <Ionicons name="play" size={16} color={theme.colors.text} />
+          <Text style={styles.watchText}>Regarder la vidéo</Text>
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -63,6 +70,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     backgroundColor: theme.colors.secondary,
+  },
+  pressedCard: {
+    opacity: 0.84,
+  },
+  pressedButton: {
+    opacity: 0.8,
   },
   cover: {
     aspectRatio: 16 / 9,
@@ -143,12 +156,10 @@ const styles = StyleSheet.create({
     marginTop: 6,
     paddingHorizontal: 17,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(154,167,201,0.22)',
-    backgroundColor: 'rgba(154,167,201,0.1)',
+    backgroundColor: theme.colors.primary,
   },
   watchText: {
-    color: theme.colors.muted,
+    color: theme.colors.text,
     fontSize: 13,
     fontWeight: '700',
   },

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +11,7 @@ import { ReplayVideoCard } from '@/components/replays/replay-video-card';
 import {
   replayCategories,
 } from '@/constants/replays-content';
+import type { Replay } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
 import { useFeaturedVideos, useLatestVideos } from '@/hooks/use-youtube';
 import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
@@ -66,6 +68,19 @@ export default function ReplaysScreen() {
     setActiveCategory('Toutes');
   };
 
+  const openReplay = useCallback((replay: Replay) => {
+    router.push({
+      pathname: '/video/[videoId]',
+      params: {
+        videoId: replay.id,
+        title: replay.title,
+        channelTitle: replay.showTitle,
+        publishedAt: replay.publishedAt,
+        duration: replay.duration,
+      },
+    });
+  }, []);
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
@@ -104,7 +119,10 @@ export default function ReplaysScreen() {
             <>
               {visibleFeaturedReplay ? (
                 <View style={styles.section}>
-                  <FeaturedReplayCard replay={visibleFeaturedReplay} />
+                  <FeaturedReplayCard
+                    onPress={() => openReplay(visibleFeaturedReplay)}
+                    replay={visibleFeaturedReplay}
+                  />
                 </View>
               ) : null}
 
@@ -116,7 +134,11 @@ export default function ReplaysScreen() {
                     contentContainerStyle={styles.latestList}
                     showsHorizontalScrollIndicator={false}>
                     {visibleLatestReplays.map((replay) => (
-                      <ReplayVideoCard key={replay.id} replay={replay} />
+                      <ReplayVideoCard
+                        key={replay.id}
+                        onPress={() => openReplay(replay)}
+                        replay={replay}
+                      />
                     ))}
                   </ScrollView>
                 </View>
@@ -126,7 +148,12 @@ export default function ReplaysScreen() {
                 <Text style={styles.sectionTitle}>Tous les replays</Text>
                 <View style={styles.grid}>
                   {filteredReplays.map((replay) => (
-                    <ReplayVideoCard key={replay.id} compact replay={replay} />
+                    <ReplayVideoCard
+                      key={replay.id}
+                      compact
+                      onPress={() => openReplay(replay)}
+                      replay={replay}
+                    />
                   ))}
                 </View>
               </View>

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Replay } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
@@ -8,11 +8,20 @@ import { theme } from '@/constants/theme';
 type ReplayVideoCardProps = {
   replay: Replay;
   compact?: boolean;
+  onPress: () => void;
 };
 
-export function ReplayVideoCard({ replay, compact = false }: ReplayVideoCardProps) {
+export function ReplayVideoCard({ replay, compact = false, onPress }: ReplayVideoCardProps) {
   return (
-    <View accessibilityLabel={`${replay.title}, ${replay.showTitle}`} style={[styles.card, compact ? styles.compactCard : styles.horizontalCard]}>
+    <Pressable
+      accessibilityLabel={`Regarder ${replay.title}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        compact ? styles.compactCard : styles.horizontalCard,
+        pressed && styles.pressedCard,
+      ]}>
       <View style={[styles.thumbnail, { backgroundColor: replay.coverColor }]}>
         {replay.thumbnailUrl ? (
           <Image
@@ -40,7 +49,7 @@ export function ReplayVideoCard({ replay, compact = false }: ReplayVideoCardProp
         {compact ? <Text style={styles.category}>{replay.category}</Text> : null}
         <Text style={styles.date}>{replay.publishedAt}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -57,6 +66,9 @@ const styles = StyleSheet.create({
   },
   compactCard: {
     width: '48.5%',
+  },
+  pressedCard: {
+    opacity: 0.84,
   },
   thumbnail: {
     aspectRatio: 16 / 9,
