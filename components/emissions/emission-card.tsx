@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
 
@@ -8,13 +8,23 @@ type EmissionCardProps = {
   accent: string;
   highlighted?: boolean;
   status?: string;
+  onPress: () => void;
 };
 
-export function EmissionCard({ title, category, accent, highlighted = false, status }: EmissionCardProps) {
-  const isUpcoming = status?.toLowerCase() === 'upcoming';
+export function EmissionCard({ title, category, accent, highlighted = false, status, onPress }: EmissionCardProps) {
+  const isUpcoming = status?.toLowerCase().includes('bientôt');
 
   return (
-    <View accessibilityRole="summary" accessibilityLabel={title} style={[styles.card, highlighted && styles.highlightedCard, { borderColor: accent }]}> 
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Ouvrir l’émission ${title}`}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        highlighted && styles.highlightedCard,
+        { borderColor: accent },
+        pressed && styles.pressed,
+      ]}>
       <View style={[styles.dot, { backgroundColor: accent }]} />
       <View style={styles.content}>
         <View style={styles.row}>
@@ -29,7 +39,8 @@ export function EmissionCard({ title, category, accent, highlighted = false, sta
         </View>
         <Text style={styles.category}>{category}</Text>
       </View>
-    </View>
+      <Text style={styles.viewText}>Voir</Text>
+    </Pressable>
   );
 }
 
@@ -82,5 +93,13 @@ const styles = StyleSheet.create({
     color: theme.colors.background,
     fontSize: 10,
     fontWeight: '800',
+  },
+  viewText: {
+    color: theme.colors.yellow,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.82,
   },
 });

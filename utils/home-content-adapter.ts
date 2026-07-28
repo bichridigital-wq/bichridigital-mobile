@@ -1,4 +1,5 @@
 import { emissions, type EmissionItem } from '@/constants/emissions-content';
+import { getEmissionSlugForPlaylist } from '@/constants/emission-playlists';
 import type { Replay } from '@/constants/replays-content';
 import type { LiveBroadcast, Playlist, Video } from '@/types/youtube';
 import {
@@ -9,6 +10,7 @@ import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
 
 export type HomeShow = {
   id: string;
+  slug: string;
   title: string;
   description: string;
   category: string;
@@ -23,28 +25,10 @@ export type HomeShowsResult = {
   usedLocalFallback: boolean;
 };
 
-const PLAYLIST_ID_TO_EMISSION_SLUG: Record<string, string> = {
-  PLWGfB5X4MACM: 'li-ci-biir-ndiagne',
-  PLL5m13dgClMs: 'firi-gent',
-};
-
-const PLAYLIST_TITLE_TO_EMISSION_SLUG: Record<string, string> = {
-  'li ci biir ndiagne': 'li-ci-biir-ndiagne',
-  'fi gent': 'firi-gent',
-};
-
-function normalizeTitle(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('fr')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
 function toHomeShow(emission: EmissionItem, playlist?: Playlist): HomeShow {
   return {
     id: emission.id,
+    slug: emission.slug,
     title: emission.title,
     description: emission.description,
     category: emission.category,
@@ -73,9 +57,7 @@ export function adaptHomeShows(playlists: Playlist[]): HomeShowsResult {
   const matchedShows: HomeShow[] = [];
 
   for (const playlist of playlists) {
-    const slug =
-      PLAYLIST_ID_TO_EMISSION_SLUG[playlist.id] ??
-      PLAYLIST_TITLE_TO_EMISSION_SLUG[normalizeTitle(playlist.title)];
+    const slug = getEmissionSlugForPlaylist(playlist);
     const emission = slug ? emissionsBySlug.get(slug) : undefined;
 
     if (!emission || matchedEmissionIds.has(emission.id)) {

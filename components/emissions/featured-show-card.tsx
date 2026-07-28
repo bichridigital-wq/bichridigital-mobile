@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
 
@@ -6,30 +6,29 @@ type FeaturedShowCardProps = {
   title: string;
   category: string;
   accent: string;
-  onPress?: () => void;
+  onPress: () => void;
 };
 
 export function FeaturedShowCard({ title, category, accent, onPress }: FeaturedShowCardProps) {
-  const isInteractive = Boolean(onPress);
-
   return (
-    <View style={[styles.card, { borderColor: accent }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Ouvrir l’émission ${title}`}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        { borderColor: accent },
+        pressed && styles.pressed,
+      ]}>
       <Text style={styles.label}>À la une</Text>
       <Text style={styles.title} numberOfLines={2}>
         {title}
       </Text>
       <Text style={styles.category}>{category}</Text>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={`Voir ${title}`}
-        accessibilityState={{ disabled: !isInteractive }}
-        disabled={!isInteractive}
-        onPress={onPress}
-        style={[styles.button, !isInteractive && styles.disabledButton]}
-      >
+      <View style={styles.button}>
         <Text style={styles.buttonText}>Voir l&apos;émission</Text>
-      </TouchableOpacity>
-    </View>
+      </View>
+    </Pressable>
   );
 }
 
@@ -65,12 +64,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     marginTop: 4,
   },
-  disabledButton: {
-    opacity: 0.7,
-  },
   buttonText: {
     color: theme.colors.text,
     fontSize: 13,
     fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.84,
   },
 });

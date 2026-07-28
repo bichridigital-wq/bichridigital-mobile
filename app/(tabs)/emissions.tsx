@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +17,9 @@ export default function EmissionsScreen() {
   const [query, setQuery] = useState('');
 
   const normalizedQuery = query.trim().toLowerCase();
+  const openEmission = (slug: string) => {
+    router.push({ pathname: '/emission/[slug]', params: { slug } });
+  };
 
   const filteredEmissions = useMemo(() => {
     return emissions.filter((item) => {
@@ -52,7 +56,12 @@ export default function EmissionsScreen() {
             ))}
           </ScrollView>
 
-          <FeaturedShowCard title={featuredEmission.title} category={featuredEmission.category} accent={featuredEmission.coverColor} />
+          <FeaturedShowCard
+            title={featuredEmission.title}
+            category={featuredEmission.category}
+            accent={featuredEmission.coverColor}
+            onPress={() => openEmission(featuredEmission.slug)}
+          />
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Toutes les émissions</Text>
@@ -66,6 +75,7 @@ export default function EmissionsScreen() {
                     accent={item.coverColor}
                     highlighted={item.id === featuredEmission.id}
                     status={item.status}
+                    onPress={() => openEmission(item.slug)}
                   />
                 ))}
               </View>

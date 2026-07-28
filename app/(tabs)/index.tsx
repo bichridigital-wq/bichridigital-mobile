@@ -472,7 +472,12 @@ function HomeShowsSection({
                 key={show.id}
                 accent={show.accent}
                 category={show.category}
-                onPress={() => router.push('/(tabs)/emissions')}
+                onPress={() =>
+                  router.push({
+                    pathname: '/emission/[slug]',
+                    params: { slug: show.slug },
+                  })
+                }
                 subtitle={show.description}
                 thumbnailUrl={show.thumbnailUrl}
                 title={show.title}
