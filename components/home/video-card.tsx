@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { RemoteThumbnail } from '@/components/home/remote-thumbnail';
 import { theme } from '@/constants/theme';
 
 type VideoCardProps = {
@@ -8,18 +9,37 @@ type VideoCardProps = {
   duration: string;
   relativeTime: string;
   accent: string;
+  thumbnailUrl?: string;
+  onPress: () => void;
 };
 
-export function VideoCard({ title, program, duration, relativeTime, accent }: VideoCardProps) {
+export function VideoCard({
+  title,
+  program,
+  duration,
+  relativeTime,
+  accent,
+  thumbnailUrl,
+  onPress,
+}: VideoCardProps) {
   return (
-    <View style={styles.card}> 
-      <View style={[styles.thumbnail, { backgroundColor: accent }]}> 
+    <Pressable
+      accessibilityLabel={`Regarder ${title}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      <View style={[styles.thumbnail, { backgroundColor: accent }]}>
+        <RemoteThumbnail
+          fallbackColor={accent}
+          style={StyleSheet.absoluteFill}
+          uri={thumbnailUrl}
+        />
         <Text style={styles.duration}>{duration}</Text>
       </View>
-      <Text style={styles.title} numberOfLines={2}>{title}</Text>
-      <Text style={styles.program} numberOfLines={1}>{program}</Text>
-      <Text style={styles.time} numberOfLines={1}>{relativeTime}</Text>
-    </View>
+      <Text numberOfLines={2} style={styles.title}>{title}</Text>
+      <Text numberOfLines={1} style={styles.program}>{program}</Text>
+      <Text numberOfLines={1} style={styles.time}>{relativeTime}</Text>
+    </Pressable>
   );
 }
 
@@ -29,22 +49,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   thumbnail: {
-    borderRadius: 18,
     height: 100,
     justifyContent: 'flex-end',
+    overflow: 'hidden',
     padding: 10,
+    borderRadius: 18,
   },
   duration: {
     alignSelf: 'flex-start',
-    color: theme.colors.background,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderRadius: 999,
+    overflow: 'hidden',
     paddingHorizontal: 8,
     paddingVertical: 4,
+    borderRadius: 999,
+    color: theme.colors.text,
+    backgroundColor: 'rgba(2,11,46,0.88)',
     fontSize: 11,
     fontWeight: '700',
   },
   title: {
+    minHeight: 40,
     color: theme.colors.text,
     fontSize: 14,
     fontWeight: '700',
@@ -58,5 +81,8 @@ const styles = StyleSheet.create({
   time: {
     color: theme.colors.muted,
     fontSize: 12,
+  },
+  pressed: {
+    opacity: 0.84,
   },
 });

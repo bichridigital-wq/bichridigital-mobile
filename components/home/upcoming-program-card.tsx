@@ -1,43 +1,69 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { RemoteThumbnail } from '@/components/home/remote-thumbnail';
 import { theme } from '@/constants/theme';
 
 type UpcomingProgramCardProps = {
   title: string;
-  subtitle: string;
   timeLabel: string;
   dateLabel: string;
-  accent: string;
+  thumbnailUrl?: string;
+  onPress: () => void;
 };
 
-export function UpcomingProgramCard({ title, subtitle, timeLabel, dateLabel, accent }: UpcomingProgramCardProps) {
+export function UpcomingProgramCard({
+  title,
+  timeLabel,
+  dateLabel,
+  thumbnailUrl,
+  onPress,
+}: UpcomingProgramCardProps) {
   return (
-    <View style={[styles.card, { borderColor: accent }]}> 
-      <View style={styles.top}>
-        <Text style={styles.date}>{dateLabel}</Text>
-        <Text style={styles.time}>{timeLabel}</Text>
+    <Pressable
+      accessibilityLabel={`Voir ${title}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      <RemoteThumbnail
+        fallbackColor={theme.colors.card}
+        style={styles.thumbnail}
+        uri={thumbnailUrl}
+      />
+      <View style={styles.content}>
+        <View style={styles.top}>
+          <Text style={styles.date}>{dateLabel}</Text>
+          <Text style={styles.time}>{timeLabel}</Text>
+        </View>
+        <Text numberOfLines={2} style={styles.title}>{title}</Text>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    overflow: 'hidden',
     borderRadius: 18,
-    padding: 14,
-    backgroundColor: theme.colors.card,
     borderWidth: 1,
-    minWidth: 180,
+    borderColor: theme.colors.yellow,
+    backgroundColor: theme.colors.card,
+  },
+  thumbnail: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+  },
+  content: {
     gap: 8,
+    padding: 14,
   },
   top: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
   },
   date: {
+    flex: 1,
     color: theme.colors.muted,
     fontSize: 12,
   },
@@ -49,11 +75,10 @@ const styles = StyleSheet.create({
   title: {
     color: theme.colors.text,
     fontSize: 15,
+    lineHeight: 21,
     fontWeight: '700',
   },
-  subtitle: {
-    color: theme.colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
+  pressed: {
+    opacity: 0.84,
   },
 });

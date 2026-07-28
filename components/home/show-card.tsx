@@ -1,60 +1,94 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { RemoteThumbnail } from '@/components/home/remote-thumbnail';
 import { theme } from '@/constants/theme';
 
 type ShowCardProps = {
   title: string;
   subtitle: string;
+  category: string;
   accent: string;
+  thumbnailUrl?: string;
+  onPress: () => void;
 };
 
-export function ShowCard({ title, subtitle, accent }: ShowCardProps) {
+export function ShowCard({
+  title,
+  subtitle,
+  category,
+  accent,
+  thumbnailUrl,
+  onPress,
+}: ShowCardProps) {
   return (
-    <View style={[styles.card, { borderColor: accent }]}> 
-      <View style={[styles.visual, { backgroundColor: accent }]} />
-      <Text style={styles.title} numberOfLines={1}>{title}</Text>
-      <Text style={styles.subtitle} numberOfLines={2}>{subtitle}</Text>
-      <TouchableOpacity style={styles.button} accessibilityRole="button" accessibilityLabel={`Voir ${title}`}>
+    <Pressable
+      accessibilityLabel={`Voir l’émission ${title}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        { borderColor: accent },
+        pressed && styles.pressed,
+      ]}>
+      <RemoteThumbnail
+        fallbackColor={accent}
+        style={styles.visual}
+        uri={thumbnailUrl}
+      />
+      <Text numberOfLines={1} style={styles.title}>{title}</Text>
+      <Text numberOfLines={1} style={styles.category}>{category}</Text>
+      <Text numberOfLines={2} style={styles.subtitle}>{subtitle}</Text>
+      <View style={styles.button}>
         <Text style={styles.buttonText}>Voir</Text>
-      </TouchableOpacity>
-    </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: 160,
+    width: 170,
     flexShrink: 0,
-    borderRadius: 20,
+    gap: 9,
     padding: 12,
-    backgroundColor: theme.colors.card,
+    borderRadius: 20,
     borderWidth: 1,
-    gap: 10,
+    backgroundColor: theme.colors.card,
   },
   visual: {
+    height: 90,
     borderRadius: 14,
-    height: 84,
   },
   title: {
     color: theme.colors.text,
     fontSize: 14,
     fontWeight: '700',
   },
+  category: {
+    color: theme.colors.yellow,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   subtitle: {
+    minHeight: 36,
     color: theme.colors.muted,
     fontSize: 12,
     lineHeight: 18,
   },
   button: {
+    minHeight: 36,
     alignSelf: 'flex-start',
-    borderRadius: 999,
+    justifyContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
   buttonText: {
     color: theme.colors.text,
     fontSize: 12,
     fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.84,
   },
 });
