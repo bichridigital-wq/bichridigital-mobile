@@ -1,53 +1,52 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
 
 type DirectEmptyStateProps = {
-  title?: string;
-  message?: string;
-  buttonLabel?: string;
+  lastCheckedLabel: string;
+  onRefresh: () => void;
 };
 
 export function DirectEmptyState({
-  title = 'Aucun direct pour le moment',
-  message = 'Revenez bientôt pour découvrir les prochaines émissions en direct.',
-  buttonLabel = 'Voir les émissions',
+  lastCheckedLabel,
+  onRefresh,
 }: DirectEmptyStateProps) {
   return (
     <View style={styles.card}>
       <View style={styles.iconWrap}>
         <Text style={styles.icon}>📺</Text>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{message}</Text>
-      <TouchableOpacity
+      <Text style={styles.title}>Aucun direct en cours</Text>
+      <Text style={styles.message}>
+        Les prochains directs de Bichridigital apparaîtront automatiquement ici.
+      </Text>
+      <Pressable
+        accessibilityLabel="Actualiser le direct"
         accessibilityRole="button"
-        accessibilityLabel={buttonLabel}
-        accessibilityHint="Aucune action disponible pour l’instant"
-        disabled
-        style={styles.button}
-      >
-        <Text style={styles.buttonText}>{buttonLabel}</Text>
-      </TouchableOpacity>
+        onPress={onRefresh}
+        style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
+        <Text style={styles.buttonText}>Actualiser</Text>
+      </Pressable>
+      <Text style={styles.lastChecked}>{lastCheckedLabel}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    padding: 24,
-    backgroundColor: theme.colors.card,
     alignItems: 'center',
     gap: 10,
+    padding: 24,
+    borderRadius: 24,
+    backgroundColor: theme.colors.card,
   },
   iconWrap: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   icon: {
     fontSize: 24,
@@ -65,15 +64,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   button: {
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: theme.colors.primary,
+    minHeight: 44,
+    justifyContent: 'center',
     marginTop: 4,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary,
+  },
+  pressed: {
+    opacity: 0.8,
   },
   buttonText: {
     color: theme.colors.text,
     fontSize: 13,
     fontWeight: '700',
+  },
+  lastChecked: {
+    color: theme.colors.muted,
+    fontSize: 11,
+    marginTop: 2,
   },
 });
