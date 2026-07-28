@@ -101,11 +101,19 @@ const mockLiveBroadcast: LiveBroadcast = {
 async function getRemoteData<T>(path: string): Promise<T> {
   const response = await apiGet<ApiResponse<T>>(path);
 
-  if (response.error) {
-    throw new Error(response.error);
+  if (response.data !== null && response.data !== undefined) {
+    return response.data;
   }
 
-  return response.data;
+  if (response.error) {
+    throw new Error('Les données YouTube sont temporairement indisponibles.');
+  }
+
+  if (response.data === null) {
+    return response.data;
+  }
+
+  throw new Error("La réponse YouTube reçue n'est pas exploitable.");
 }
 
 export function getFeaturedVideos(): Promise<Video[]> {

@@ -8,8 +8,8 @@ type PlaylistMetadata = {
 };
 
 const defaultMetadata: PlaylistMetadata = {
-  showTitle: 'Bichridigital',
-  category: 'Magazine',
+  showTitle: '',
+  category: 'Actualité',
   coverColor: '#0024FF',
 };
 
@@ -96,7 +96,7 @@ export function adaptYoutubeVideo(video: Video, featured: boolean): Replay {
   return {
     id: video.id,
     title: video.title,
-    showTitle: metadata.showTitle || video.channelTitle,
+    showTitle: metadata.showTitle || video.channelTitle.trim() || 'Bichridigital',
     category: metadata.category,
     duration: formatYoutubeDuration(video.duration),
     publishedAt: formatPublishedAt(video.publishedAt),
