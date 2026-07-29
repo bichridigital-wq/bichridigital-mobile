@@ -180,6 +180,25 @@ export const emissions: EmissionItem[] = [
 
 export const featuredEmission: EmissionItem = emissions[0];
 
+export function getEmissionStatusLabel(
+  status: string,
+  hasVerifiedPlaylist: boolean,
+): string {
+  if (hasVerifiedPlaylist) {
+    return 'En replay';
+  }
+
+  const normalizedStatus = status.trim().toLocaleLowerCase('fr');
+  if (normalizedStatus === 'available') {
+    return 'Disponible';
+  }
+  if (normalizedStatus.includes('bientôt')) {
+    return 'Bientôt';
+  }
+
+  return status;
+}
+
 export function getEmissionBySlug(
   slug: string | undefined,
 ): EmissionItem | undefined {

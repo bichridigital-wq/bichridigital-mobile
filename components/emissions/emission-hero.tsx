@@ -1,11 +1,24 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { RemoteThumbnail } from '@/components/home/remote-thumbnail';
-import type { EmissionItem } from '@/constants/emissions-content';
+import {
+  getEmissionStatusLabel,
+  type EmissionItem,
+} from '@/constants/emissions-content';
 import { theme } from '@/constants/theme';
 
-export function EmissionHero({ emission }: { emission: EmissionItem }) {
+export function EmissionHero({
+  emission,
+  hasVerifiedPlaylist,
+}: {
+  emission: EmissionItem;
+  hasVerifiedPlaylist: boolean;
+}) {
   const isComingSoon = emission.slug === 'xam-ndiagne-jotna';
+  const statusLabel = getEmissionStatusLabel(
+    emission.status,
+    hasVerifiedPlaylist,
+  );
 
   return (
     <View style={styles.card}>
@@ -17,10 +30,10 @@ export function EmissionHero({ emission }: { emission: EmissionItem }) {
         <View style={styles.metaRow}>
           <Text style={styles.category}>{emission.category}</Text>
           <View
-            accessibilityLabel={isComingSoon ? 'Bientôt' : emission.status}
+            accessibilityLabel={statusLabel}
             style={[styles.badge, isComingSoon && styles.comingSoonBadge]}>
             <Text style={[styles.badgeText, isComingSoon && styles.comingSoonText]}>
-              {isComingSoon ? 'BIENTÔT' : emission.status}
+              {isComingSoon ? 'BIENTÔT' : statusLabel}
             </Text>
           </View>
         </View>

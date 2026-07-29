@@ -100,6 +100,7 @@ function LinkedEmission({
     <EmissionPageFrame
       bottomInset={insets.bottom}
       emission={emission}
+      hasVerifiedPlaylist
       refreshControl={
         <RefreshControl
           colors={[theme.colors.yellow]}
@@ -141,6 +142,7 @@ function UnlinkedEmission({ emission }: { emission: EmissionItem }) {
     <EmissionPageFrame
       bottomInset={insets.bottom}
       emission={emission}
+      hasVerifiedPlaylist={false}
       topInset={insets.top}>
       <EmissionEmptyState message={message} />
     </EmissionPageFrame>
@@ -151,12 +153,14 @@ function EmissionPageFrame({
   emission,
   children,
   refreshControl,
+  hasVerifiedPlaylist,
   topInset,
   bottomInset,
 }: {
   emission: EmissionItem;
   children: ReactNode;
   refreshControl?: ReactElement<RefreshControlProps>;
+  hasVerifiedPlaylist: boolean;
   topInset: number;
   bottomInset: number;
 }) {
@@ -170,7 +174,10 @@ function EmissionPageFrame({
         ]}
         refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}>
-        <EmissionHero emission={emission} />
+        <EmissionHero
+          emission={emission}
+          hasVerifiedPlaylist={hasVerifiedPlaylist}
+        />
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Derniers épisodes</Text>
           {children}
