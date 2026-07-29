@@ -40,6 +40,11 @@ export const emissionPlaylists: readonly EmissionPlaylist[] = [
     playlistId: 'PLbXgo335NOTg',
     verified: true,
   },
+  {
+    slug: 'entretien-special',
+    playlistId: 'PLROASFusaa6s',
+    verified: true,
+  },
 ];
 
 export function getPlaylistIdForEmission(slug: string): string | null {
