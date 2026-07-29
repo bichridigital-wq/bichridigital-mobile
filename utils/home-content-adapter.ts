@@ -17,7 +17,6 @@ export type HomeShow = {
   status: string;
   accent: string;
   thumbnailUrl?: string;
-  playlistId?: string;
 };
 
 export type HomeShowsResult = {
@@ -35,7 +34,6 @@ function toHomeShow(emission: EmissionItem, playlist?: Playlist): HomeShow {
     status: emission.status,
     accent: emission.coverColor,
     thumbnailUrl: playlist?.thumbnailUrl.trim() || undefined,
-    playlistId: playlist?.id,
   };
 }
 

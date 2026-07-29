@@ -3,30 +3,57 @@ import type { Playlist } from '@/types/youtube';
 export type EmissionPlaylist = {
   slug: string;
   playlistId: string;
-  thumbnailUrl: string;
+  verified: true;
 };
 
+// Source unique des correspondances officielles playlist → émission.
+// Toute prochaine correspondance vérifiée doit être ajoutée ici uniquement :
+// { slug: 'entretien-special', playlistId: '...', verified: true }
 export const emissionPlaylists: readonly EmissionPlaylist[] = [
   {
     slug: 'li-ci-biir-ndiagne',
     playlistId: 'PLWGfB5X4MACM',
-    thumbnailUrl: 'https://i.ytimg.com/vi/UBs2aOrBlyc/maxresdefault.jpg',
+    verified: true,
   },
   {
     slug: 'firi-gent',
     playlistId: 'PLL5m13dgClMs',
-    thumbnailUrl: 'https://i.ytimg.com/vi/mjaj0wEzQMQ/maxresdefault.jpg',
+    verified: true,
+  },
+  {
+    slug: 'gattandu-magal',
+    playlistId: 'PLESg8ekHPxRg',
+    verified: true,
+  },
+  {
+    slug: 'talaatay-cheikh-ibra',
+    playlistId: 'PLNDBRIisSGq4',
+    verified: true,
+  },
+  {
+    slug: 'jotaayu-bichri',
+    playlistId: 'PLI_MqicDqh-w',
+    verified: true,
+  },
+  {
+    slug: 'apres-ndogou',
+    playlistId: 'PLbXgo335NOTg',
+    verified: true,
   },
 ];
 
-export function getEmissionPlaylistBySlug(
-  slug: string,
-): EmissionPlaylist | undefined {
-  return emissionPlaylists.find((item) => item.slug === slug);
+export function getPlaylistIdForEmission(slug: string): string | null {
+  return (
+    emissionPlaylists.find(
+      (item) => item.verified && item.slug === slug,
+    )?.playlistId ?? null
+  );
 }
 
 export function getEmissionSlugForPlaylist(
   playlist: Pick<Playlist, 'id'>,
 ): string | undefined {
-  return emissionPlaylists.find((item) => item.playlistId === playlist.id)?.slug;
+  return emissionPlaylists.find(
+    (item) => item.verified && item.playlistId === playlist.id,
+  )?.slug;
 }

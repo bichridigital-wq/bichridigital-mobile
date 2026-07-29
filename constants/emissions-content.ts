@@ -1,5 +1,3 @@
-import { getEmissionPlaylistBySlug } from '@/constants/emission-playlists';
-
 export type EmissionCategory =
   | 'Toutes'
   | 'Actualité'
@@ -20,8 +18,6 @@ export type EmissionItem = {
   time: string;
   coverColor: string;
   status: string;
-  playlistId?: string;
-  thumbnailUrl?: string;
 };
 
 export const categories: EmissionCategory[] = [
@@ -35,19 +31,6 @@ export const categories: EmissionCategory[] = [
   'Histoire',
 ];
 
-function getPlaylistFields(slug: string): Pick<
-  EmissionItem,
-  'playlistId' | 'thumbnailUrl'
-> {
-  const playlist = getEmissionPlaylistBySlug(slug);
-  return playlist
-    ? {
-        playlistId: playlist.playlistId,
-        thumbnailUrl: playlist.thumbnailUrl,
-      }
-    : {};
-}
-
 export const emissions: EmissionItem[] = [
   {
     id: 'emission-1',
@@ -59,7 +42,6 @@ export const emissions: EmissionItem[] = [
     time: '20:30',
     coverColor: '#0024FF',
     status: 'En direct',
-    ...getPlaylistFields('li-ci-biir-ndiagne'),
   },
   {
     id: 'emission-2',
@@ -93,7 +75,6 @@ export const emissions: EmissionItem[] = [
     time: '21:00',
     coverColor: '#0024FF',
     status: 'Nouveau',
-    ...getPlaylistFields('firi-gent'),
   },
   {
     id: 'emission-5',
@@ -182,6 +163,18 @@ export const emissions: EmissionItem[] = [
     time: 'À préciser',
     coverColor: '#FCCD12',
     status: 'Bientôt disponible',
+  },
+  {
+    id: 'emission-13',
+    slug: 'gattandu-magal',
+    title: 'Gàttandu Màggal',
+    description:
+      'Une émission consacrée à la préparation, à l’histoire et aux enseignements du Grand Magal de Touba.',
+    category: 'Religion',
+    day: 'À retrouver',
+    time: 'En replay',
+    coverColor: '#0024FF',
+    status: 'available',
   },
 ];
 

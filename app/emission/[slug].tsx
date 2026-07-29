@@ -21,6 +21,7 @@ import {
   getEmissionBySlug,
   type EmissionItem,
 } from '@/constants/emissions-content';
+import { getPlaylistIdForEmission } from '@/constants/emission-playlists';
 import type { Replay } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
 import { usePlaylistVideos } from '@/hooks/use-youtube';
@@ -38,8 +39,10 @@ export default function EmissionScreen() {
     return <EmissionNotFound />;
   }
 
-  return emission.playlistId ? (
-    <LinkedEmission emission={emission} playlistId={emission.playlistId} />
+  const playlistId = getPlaylistIdForEmission(emission.slug);
+
+  return playlistId ? (
+    <LinkedEmission emission={emission} playlistId={playlistId} />
   ) : (
     <UnlinkedEmission emission={emission} />
   );

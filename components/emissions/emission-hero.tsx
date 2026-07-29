@@ -12,7 +12,6 @@ export function EmissionHero({ emission }: { emission: EmissionItem }) {
       <RemoteThumbnail
         fallbackColor={emission.coverColor}
         style={styles.banner}
-        uri={emission.thumbnailUrl}
       />
       <View style={styles.content}>
         <View style={styles.metaRow}>
