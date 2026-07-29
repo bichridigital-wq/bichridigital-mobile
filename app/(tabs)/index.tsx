@@ -135,6 +135,7 @@ export default function HomeScreen() {
         channelTitle: video.showTitle,
         publishedAt: video.publishedAt,
         duration: video.duration,
+        thumbnailUrl: video.thumbnailUrl,
       },
     });
   }, []);
@@ -148,6 +149,7 @@ export default function HomeScreen() {
         channelTitle: 'Bichridigital',
         publishedAt: broadcast.relativeLabel,
         duration: broadcast.status === 'live' ? 'En direct' : 'À venir',
+        thumbnailUrl: broadcast.thumbnailUrl,
       },
     });
   }, []);

@@ -118,6 +118,7 @@ export default function DirectScreen() {
         channelTitle: replay.showTitle,
         publishedAt: replay.publishedAt,
         duration: replay.duration,
+        thumbnailUrl: replay.thumbnailUrl,
       },
     });
   }, []);
@@ -135,6 +136,7 @@ export default function DirectScreen() {
         channelTitle: 'Bichridigital',
         publishedAt: broadcast.relativeLabel,
         duration: broadcast.status === 'live' ? 'En direct' : 'À venir',
+        thumbnailUrl: broadcast.thumbnailUrl,
       },
     });
   }, []);

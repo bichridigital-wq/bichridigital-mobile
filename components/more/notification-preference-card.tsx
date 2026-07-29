@@ -20,7 +20,8 @@ export function NotificationPreferenceCard({
       <View style={styles.content}>
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.description}>
-          Les notifications push seront disponibles prochainement.
+          Cette préférence sera utilisée lorsque les notifications de
+          l’application seront activées.
         </Text>
         <Text style={styles.localStatus}>
           Préférence locale : {enabled ? 'activée' : 'désactivée'}

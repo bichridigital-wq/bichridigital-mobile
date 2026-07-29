@@ -25,6 +25,7 @@ import { getPlaylistIdForEmission } from '@/constants/emission-playlists';
 import type { Replay } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
 import { usePlaylistVideos } from '@/hooks/use-youtube';
+import { useUserLibrary } from '@/hooks/use-user-library';
 import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
 
 function readParam(value: string | string[] | undefined): string {
@@ -166,7 +167,7 @@ function EmissionPageFrame({
 }) {
   return (
     <View style={[styles.screen, { paddingTop: topInset }]}>
-      <PageHeader />
+      <PageHeader emission={emission} />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -187,7 +188,14 @@ function EmissionPageFrame({
   );
 }
 
-function PageHeader() {
+function PageHeader({ emission }: { emission: EmissionItem }) {
+  const {
+    isEmissionFavorite,
+    isHydrated,
+    toggleEmissionFavorite,
+  } = useUserLibrary();
+  const isFavorite = isEmissionFavorite(emission.slug);
+
   return (
     <View style={styles.header}>
       <Pressable
@@ -199,7 +207,34 @@ function PageHeader() {
         <Ionicons color={theme.colors.text} name="arrow-back" size={22} />
       </Pressable>
       <Text style={styles.screenTitle}>Émission</Text>
-      <View style={styles.headerSpacer} />
+      <Pressable
+        accessibilityLabel={
+          isFavorite
+            ? `Retirer l’émission ${emission.title} des favoris`
+            : `Ajouter l’émission ${emission.title} aux favoris`
+        }
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !isHydrated }}
+        disabled={!isHydrated}
+        onPress={() =>
+          toggleEmissionFavorite({
+            slug: emission.slug,
+            title: emission.title,
+            category: emission.category,
+            coverColor: emission.coverColor,
+          })
+        }
+        style={({ pressed }) => [
+          styles.backButton,
+          !isHydrated && styles.disabled,
+          pressed && styles.pressed,
+        ]}>
+        <Ionicons
+          color={isFavorite ? theme.colors.yellow : theme.colors.text}
+          name={isFavorite ? 'heart' : 'heart-outline'}
+          size={21}
+        />
+      </Pressable>
     </View>
   );
 }
@@ -267,6 +302,7 @@ function openEpisode(episode: Replay) {
       channelTitle: episode.showTitle,
       publishedAt: episode.publishedAt,
       duration: episode.duration,
+      thumbnailUrl: episode.thumbnailUrl,
     },
   });
 }
@@ -289,7 +325,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary,
   },
   screenTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '800' },
-  headerSpacer: { width: 44 },
+  disabled: { opacity: 0.45 },
   content: {
     gap: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,

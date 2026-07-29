@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { YoutubePlayer, isValidYoutubeVideoId } from '@/components/video/youtube-player';
 import { theme } from '@/constants/theme';
+import { useUserLibrary } from '@/hooks/use-user-library';
 
 function readParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? '' : value ?? '';
@@ -14,12 +15,19 @@ function readParam(value: string | string[] | undefined): string {
 export default function VideoScreen() {
   const insets = useSafeAreaInsets();
   const [externalOpenFailed, setExternalOpenFailed] = useState(false);
+  const {
+    addRecentlyWatched,
+    isHydrated,
+    isVideoFavorite,
+    toggleVideoFavorite,
+  } = useUserLibrary();
   const params = useLocalSearchParams<{
     videoId?: string | string[];
     title?: string | string[];
     channelTitle?: string | string[];
     publishedAt?: string | string[];
     duration?: string | string[];
+    thumbnailUrl?: string | string[];
   }>();
 
   const videoId = readParam(params.videoId).trim();
@@ -27,7 +35,31 @@ export default function VideoScreen() {
   const channelTitle = readParam(params.channelTitle).trim() || 'Bichridigital';
   const publishedAt = readParam(params.publishedAt).trim() || 'Date indisponible';
   const duration = readParam(params.duration).trim() || 'Durée indisponible';
+  const thumbnailUrl = readParam(params.thumbnailUrl).trim() || undefined;
   const canOpenYoutube = isValidYoutubeVideoId(videoId);
+  const isFavorite = canOpenYoutube && isVideoFavorite(videoId);
+  const libraryVideo = useMemo(
+    () => ({
+      videoId,
+      title,
+      thumbnailUrl,
+      channelTitle,
+      publishedAt,
+      duration,
+    }),
+    [channelTitle, duration, publishedAt, thumbnailUrl, title, videoId],
+  );
+
+  useEffect(() => {
+    if (isHydrated && canOpenYoutube) {
+      addRecentlyWatched(libraryVideo);
+    }
+  }, [
+    addRecentlyWatched,
+    canOpenYoutube,
+    isHydrated,
+    libraryVideo,
+  ]);
 
   const openOnYoutube = async () => {
     if (canOpenYoutube) {
@@ -52,7 +84,27 @@ export default function VideoScreen() {
           <Ionicons name="arrow-back" color={theme.colors.text} size={22} />
         </Pressable>
         <Text style={styles.screenTitle}>Lecture</Text>
-        <View style={styles.headerSpacer} />
+        <Pressable
+          accessibilityLabel={
+            isFavorite
+              ? 'Retirer cette vidéo des favoris'
+              : 'Ajouter cette vidéo aux favoris'
+          }
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !isHydrated || !canOpenYoutube }}
+          disabled={!isHydrated || !canOpenYoutube}
+          onPress={() => toggleVideoFavorite(libraryVideo)}
+          style={({ pressed }) => [
+            styles.favoriteButton,
+            (!isHydrated || !canOpenYoutube) && styles.disabledButton,
+            pressed && styles.pressedButton,
+          ]}>
+          <Ionicons
+            color={isFavorite ? theme.colors.yellow : theme.colors.text}
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={21}
+          />
+        </Pressable>
       </View>
 
       <ScrollView
@@ -116,7 +168,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary,
   },
   screenTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '800' },
-  headerSpacer: { width: 44 },
+  favoriteButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    backgroundColor: theme.colors.secondary,
+  },
   content: {
     gap: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,

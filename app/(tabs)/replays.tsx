@@ -77,6 +77,7 @@ export default function ReplaysScreen() {
         channelTitle: replay.showTitle,
         publishedAt: replay.publishedAt,
         duration: replay.duration,
+        thumbnailUrl: replay.thumbnailUrl,
       },
     });
   }, []);
