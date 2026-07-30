@@ -17,26 +17,38 @@ import { DirectReplayCard } from '@/components/direct/direct-replay-card';
 import { LivePlayerCard } from '@/components/direct/live-player-card';
 import { OfflineLiveState } from '@/components/direct/offline-live-state';
 import { UpcomingLiveCard } from '@/components/direct/upcoming-live-card';
+import { FeaturedScheduleCard } from '@/components/schedule/featured-schedule-card';
+import { ScheduleEventCard } from '@/components/schedule/schedule-event-card';
+import { ScheduleLoadingState } from '@/components/schedule/schedule-loading-state';
+import { getEmissionBySlug } from '@/constants/emissions-content';
 import type { Replay } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
 import { useCountdown } from '@/hooks/use-countdown';
 import { useLivePolling } from '@/hooks/use-live-polling';
 import { useNotifications } from '@/hooks/use-notifications';
+import { useSchedule } from '@/hooks/use-schedule';
 import { useLatestVideos, useLiveBroadcast } from '@/hooks/use-youtube';
+import type { ScheduleEventViewModel } from '@/types/schedule';
 import {
   adaptLiveBroadcast,
   resolveLiveState,
 } from '@/utils/live-broadcast-adapter';
 import { playLightHaptic } from '@/utils/haptics';
 import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
+import { toScheduleViewModel } from '@/utils/schedule-adapter';
+import { getMillisecondsUntilStart } from '@/utils/schedule-date';
 
 const ACTIVE_POLL_INTERVAL_MS = 60_000;
 const OFFLINE_POLL_INTERVAL_MS = 180_000;
+const NEAR_SCHEDULE_POLL_INTERVAL_MS = 120_000;
+const DEFAULT_SCHEDULE_POLL_INTERVAL_MS = 300_000;
 
 export default function DirectScreen() {
   const insets = useSafeAreaInsets();
   const liveQuery = useLiveBroadcast();
   const latestQuery = useLatestVideos();
+  const scheduleQuery = useSchedule();
+  const refreshSchedule = scheduleQuery.refresh;
   const reloadLive = liveQuery.reload;
   const reloadReplays = latestQuery.reload;
   const { isPermissionGranted, notificationsEnabled } = useNotifications();
@@ -64,6 +76,18 @@ export default function DirectScreen() {
     intervalMs: pollInterval,
     reload: reloadLive,
   });
+  const schedulePollInterval =
+    scheduleQuery.nextEvent &&
+    getMillisecondsUntilStart(scheduleQuery.nextEvent.scheduledStartTime) <=
+      30 * 60_000
+      ? NEAR_SCHEDULE_POLL_INTERVAL_MS
+      : DEFAULT_SCHEDULE_POLL_INTERVAL_MS;
+  useLivePolling({
+    loading: scheduleQuery.isLoading,
+    refreshing: scheduleQuery.isRefreshing,
+    intervalMs: schedulePollInterval,
+    reload: refreshSchedule,
+  });
   const presentation = useMemo(
     () =>
       liveState.status === 'live' || liveState.status === 'upcoming'
@@ -90,13 +114,41 @@ export default function DirectScreen() {
         .map((video) => adaptYoutubeVideo(video, false)),
     [latestQuery.data],
   );
-  const refreshing = liveQuery.refreshing || latestQuery.refreshing;
+  const liveVideoId =
+    liveState.status === 'live' || liveState.status === 'upcoming'
+      ? liveState.broadcast.id
+      : null;
+  const scheduleEvents = useMemo(
+    () =>
+      scheduleQuery.events
+        .filter(
+          (event) =>
+            liveState.status !== 'live' ||
+            !event.youtubeVideoId ||
+            event.youtubeVideoId !== liveVideoId,
+        )
+        .map((event) => toScheduleViewModel(event)),
+    [liveState.status, liveVideoId, scheduleQuery.events],
+  );
+  const youtubeUpcomingMatchedBySchedule =
+    liveState.status === 'upcoming' &&
+    scheduleQuery.events.some(
+      (event) =>
+        event.youtubeVideoId !== null &&
+        event.youtubeVideoId !== undefined &&
+        event.youtubeVideoId === liveVideoId,
+    );
+  const refreshing =
+    liveQuery.refreshing ||
+    latestQuery.refreshing ||
+    scheduleQuery.isRefreshing;
 
   const refreshAll = useCallback(() => {
     playLightHaptic();
     reloadLive();
     reloadReplays();
-  }, [reloadLive, reloadReplays]);
+    refreshSchedule();
+  }, [refreshSchedule, reloadLive, reloadReplays]);
 
   const openReplay = useCallback((replay: Replay) => {
     router.push({
@@ -134,10 +186,12 @@ export default function DirectScreen() {
         ) : liveState.status === 'live' && presentation ? (
           <LivePlayerCard presentation={presentation} />
         ) : liveState.status === 'upcoming' && presentation ? (
-          <UpcomingLiveCard
-            countdown={countdown}
-            presentation={presentation}
-          />
+          youtubeUpcomingMatchedBySchedule ? null : (
+            <UpcomingLiveCard
+              countdown={countdown}
+              presentation={presentation}
+            />
+          )
         ) : (
           <OfflineLiveState
             notificationsActive={
@@ -161,6 +215,15 @@ export default function DirectScreen() {
           </Text>
         ) : null}
 
+        <AgendaSection
+          error={scheduleQuery.error}
+          events={scheduleEvents}
+          loading={scheduleQuery.isLoading && scheduleEvents.length === 0}
+          onRefresh={refreshSchedule}
+          onRefreshLive={reloadLive}
+          screenActive={screenActive}
+        />
+
         <ReplaySection
           error={latestQuery.error}
           loading={latestQuery.loading && latestReplays.length === 0}
@@ -169,6 +232,125 @@ export default function DirectScreen() {
           replays={latestReplays}
         />
       </ScrollView>
+    </View>
+  );
+}
+
+type AgendaSectionProps = {
+  error: Error | null;
+  events: ScheduleEventViewModel[];
+  loading: boolean;
+  onRefresh: () => void;
+  onRefreshLive: () => void;
+  screenActive: boolean;
+};
+
+function AgendaSection({
+  error,
+  events,
+  loading,
+  onRefresh,
+  onRefreshLive,
+  screenActive,
+}: AgendaSectionProps) {
+  const firstEvent = events[0] ?? null;
+  const refreshAtStart = useCallback(() => {
+    onRefresh();
+    onRefreshLive();
+  }, [onRefresh, onRefreshLive]);
+  const countdown = useCountdown(
+    firstEvent?.scheduledStartTime ?? '',
+    screenActive && firstEvent !== null && !firstEvent.hasStarted,
+    refreshAtStart,
+  );
+
+  const openEvent = useCallback((event: ScheduleEventViewModel) => {
+    if (event.youtubeVideoId) {
+      playLightHaptic();
+      router.push({
+        pathname: '/video/[videoId]',
+        params: {
+          videoId: event.youtubeVideoId,
+          title: event.title,
+          channelTitle: 'Bichridigital',
+          publishedAt: event.scheduledStartTime,
+          duration: 'Diffusion programmée',
+          ...(event.thumbnailUrl ? { thumbnailUrl: event.thumbnailUrl } : {}),
+        },
+      });
+      return;
+    }
+
+    const emission = getEmissionBySlug(event.slug ?? undefined);
+    if (emission) {
+      playLightHaptic();
+      router.push({
+        pathname: '/emission/[slug]',
+        params: { slug: emission.slug },
+      });
+    }
+  }, []);
+
+  const hasAction = useCallback(
+    (event: ScheduleEventViewModel) =>
+      Boolean(event.youtubeVideoId || getEmissionBySlug(event.slug ?? undefined)),
+    [],
+  );
+
+  return (
+    <View accessibilityLabel="À l'agenda" style={styles.section}>
+      <View style={styles.agendaHeader}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>À l&apos;agenda</Text>
+        <Text style={styles.agendaSubtitle}>
+          Les prochains rendez-vous officiels de Bichridigital.
+        </Text>
+      </View>
+      {loading ? (
+        <ScheduleLoadingState />
+      ) : firstEvent ? (
+        <>
+          <FeaturedScheduleCard
+            countdown={countdown}
+            event={firstEvent}
+            hasReliableAction={hasAction(firstEvent)}
+            onOpen={() => openEvent(firstEvent)}
+            onRefreshLive={onRefreshLive}
+          />
+          {events.slice(1, 5).map((event) => (
+            <ScheduleEventCard
+              event={event}
+              hasReliableAction={hasAction(event)}
+              key={event.id}
+              onOpen={() => openEvent(event)}
+            />
+          ))}
+          {error ? (
+            <Text accessibilityRole="alert" style={styles.refreshWarning}>
+              L&apos;actualisation de l&apos;agenda a échoué. Les informations déjà
+              chargées restent affichées.
+            </Text>
+          ) : null}
+        </>
+      ) : error ? (
+        <View accessibilityRole="alert" style={styles.agendaMessage}>
+          <Text style={styles.agendaMessageTitle}>Impossible de charger l&apos;agenda.</Text>
+          <Pressable
+            accessibilityLabel="Réessayer de charger l'agenda"
+            accessibilityRole="button"
+            onPress={onRefresh}
+            style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}>
+            <Text style={styles.retryText}>Réessayer</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.agendaMessage}>
+          <Text style={styles.agendaMessageTitle}>Aucun rendez-vous programmé</Text>
+          <Text style={styles.replayErrorText}>
+            Les prochaines émissions et diffusions apparaîtront ici dès leur
+            publication.
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -259,6 +441,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   section: { gap: 12 },
+  agendaHeader: { gap: 4 },
+  agendaSubtitle: { color: theme.colors.muted, fontSize: 12, lineHeight: 18 },
+  agendaMessage: {
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: theme.colors.secondary,
+  },
+  agendaMessageTitle: {
+    color: theme.colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
