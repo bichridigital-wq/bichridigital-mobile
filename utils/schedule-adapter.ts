@@ -7,7 +7,7 @@ import type {
 const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ISO_UTC_PATTERN =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
 
 function optionalString(value: unknown): string | null | undefined {
   if (value === null || value === undefined) return null;
@@ -99,6 +99,12 @@ export function parseScheduleResponse(value: unknown): ScheduleEvent[] {
     if (event && !seenIds.has(event.id)) {
       seenIds.add(event.id);
       events.push(event);
+    } else if (!event && __DEV__) {
+      const id =
+        item && typeof item === 'object' && 'id' in item
+          ? String(item.id)
+          : 'inconnu';
+      console.warn(`[Agenda] Événement ${id} ignoré : données invalides.`);
     }
   }
   return events;

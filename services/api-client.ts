@@ -5,6 +5,12 @@ import {
 
 class ApiClientError extends Error {}
 
+type ApiGetOptions = {
+  timeoutMs?: number;
+  headers?: Record<string, string>;
+  debugLabel?: string;
+};
+
 function buildApiUrl(path: string): string {
   if (!BICHRIDIGITAL_API_URL) {
     throw new ApiClientError(
@@ -34,19 +40,28 @@ function buildApiUrl(path: string): string {
 
 export async function apiGet<T>(
   path: string,
-  timeoutMs = API_REQUEST_TIMEOUT_MS,
+  options: ApiGetOptions = {},
 ): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? API_REQUEST_TIMEOUT_MS;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const url = buildApiUrl(path);
 
   try {
-    const response = await fetch(buildApiUrl(path), {
+    if (__DEV__ && options.debugLabel) {
+      console.info(`[${options.debugLabel}] GET ${url}`);
+    }
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         Accept: 'application/json',
+        ...options.headers,
       },
       signal: controller.signal,
     });
+    if (__DEV__ && options.debugLabel) {
+      console.info(`[${options.debugLabel}] HTTP ${response.status}`);
+    }
 
     if (!response.ok) {
       throw new ApiClientError(

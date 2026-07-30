@@ -10,8 +10,19 @@ export async function getUpcomingSchedule(
   options: GetUpcomingScheduleOptions = {},
 ): Promise<ScheduleEvent[]> {
   const response = await apiGet<unknown>(
-    '/schedule/upcoming',
-    options.timeoutMs,
+    `/schedule/upcoming?fresh=${Date.now()}`,
+    {
+      timeoutMs: options.timeoutMs,
+      headers: { 'Cache-Control': 'no-cache' },
+      debugLabel: 'Agenda',
+    },
   );
-  return parseScheduleResponse(response);
+  try {
+    const events = parseScheduleResponse(response);
+    if (__DEV__) console.info(`[Agenda] ${events.length} événement(s) reçu(s).`);
+    return events;
+  } catch (error) {
+    if (__DEV__) console.warn('[Agenda] Erreur de validation de la réponse.');
+    throw error;
+  }
 }
