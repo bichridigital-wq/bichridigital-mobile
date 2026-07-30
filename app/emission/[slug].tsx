@@ -11,6 +11,7 @@ import {
   View,
   type RefreshControlProps,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmissionEmptyState } from '@/components/emissions/emission-empty-state';
@@ -24,9 +25,11 @@ import {
 import { getPlaylistIdForEmission } from '@/constants/emission-playlists';
 import type { Replay } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
+import { useActionFeedbackAnimation } from '@/hooks/use-action-feedback-animation';
 import { usePlaylistVideos } from '@/hooks/use-youtube';
 import { useUserLibrary } from '@/hooks/use-user-library';
 import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
+import { playAddHaptic, playRemoveHaptic } from '@/utils/haptics';
 
 function readParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? '' : value ?? '';
@@ -167,7 +170,7 @@ function EmissionPageFrame({
 }) {
   return (
     <View style={[styles.screen, { paddingTop: topInset }]}>
-      <PageHeader emission={emission} />
+      <PageHeader />
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -179,6 +182,7 @@ function EmissionPageFrame({
           emission={emission}
           hasVerifiedPlaylist={hasVerifiedPlaylist}
         />
+        <EmissionFollowControl emission={emission} />
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Derniers épisodes</Text>
           {children}
@@ -188,14 +192,7 @@ function EmissionPageFrame({
   );
 }
 
-function PageHeader({ emission }: { emission: EmissionItem }) {
-  const {
-    isEmissionFavorite,
-    isHydrated,
-    toggleEmissionFavorite,
-  } = useUserLibrary();
-  const isFavorite = isEmissionFavorite(emission.slug);
-
+function PageHeader() {
   return (
     <View style={styles.header}>
       <Pressable
@@ -207,34 +204,70 @@ function PageHeader({ emission }: { emission: EmissionItem }) {
         <Ionicons color={theme.colors.text} name="arrow-back" size={22} />
       </Pressable>
       <Text style={styles.screenTitle}>Émission</Text>
-      <Pressable
-        accessibilityLabel={
-          isFavorite
-            ? `Retirer l’émission ${emission.title} des favoris`
-            : `Ajouter l’émission ${emission.title} aux favoris`
-        }
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !isHydrated }}
-        disabled={!isHydrated}
-        onPress={() =>
-          toggleEmissionFavorite({
-            slug: emission.slug,
-            title: emission.title,
-            category: emission.category,
-            coverColor: emission.coverColor,
-          })
-        }
-        style={({ pressed }) => [
-          styles.backButton,
-          !isHydrated && styles.disabled,
-          pressed && styles.pressed,
-        ]}>
-        <Ionicons
-          color={isFavorite ? theme.colors.yellow : theme.colors.text}
-          name={isFavorite ? 'heart' : 'heart-outline'}
-          size={21}
-        />
-      </Pressable>
+      <View style={styles.headerSpacer} />
+    </View>
+  );
+}
+
+function EmissionFollowControl({ emission }: { emission: EmissionItem }) {
+  const {
+    isEmissionFollowed,
+    isHydrated,
+    toggleEmissionFollow,
+  } = useUserLibrary();
+  const { animate, animatedStyle } = useActionFeedbackAnimation();
+  const isFollowed = isEmissionFollowed(emission.slug);
+
+  return (
+    <View style={styles.followCard}>
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          accessibilityLabel={
+            isFollowed
+              ? `Ne plus suivre l’émission ${emission.title}`
+              : `Suivre l’émission ${emission.title}`
+          }
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !isHydrated }}
+          disabled={!isHydrated}
+          onPress={() => {
+            animate();
+            if (isFollowed) {
+              playRemoveHaptic();
+            } else {
+              playAddHaptic();
+            }
+            toggleEmissionFollow({
+              slug: emission.slug,
+              title: emission.title,
+              category: emission.category,
+              coverColor: emission.coverColor,
+            });
+          }}
+          style={({ pressed }) => [
+            styles.followButton,
+            isFollowed && styles.followedButton,
+            !isHydrated && styles.disabled,
+            pressed && styles.pressed,
+          ]}>
+          <Ionicons
+            color={isFollowed ? theme.colors.background : theme.colors.text}
+            name={isFollowed ? 'notifications' : 'notifications-outline'}
+            size={19}
+          />
+          <Text
+            style={[
+              styles.followButtonText,
+              isFollowed && styles.followedButtonText,
+            ]}>
+            {isFollowed ? 'Émission suivie' : 'Suivre l’émission'}
+          </Text>
+        </Pressable>
+      </Animated.View>
+      <Text style={styles.followInfo}>
+        Le suivi permettra de recevoir les nouveautés de cette émission lorsque
+        les notifications seront activées.
+      </Text>
     </View>
   );
 }
@@ -325,6 +358,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary,
   },
   screenTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '800' },
+  headerSpacer: { width: 44 },
   disabled: { opacity: 0.45 },
   content: {
     gap: theme.spacing.lg,
@@ -333,6 +367,37 @@ const styles = StyleSheet.create({
   },
   section: { gap: 12 },
   sectionTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '800' },
+  followCard: {
+    gap: 9,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: theme.colors.secondary,
+  },
+  followButton: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary,
+  },
+  followedButton: { backgroundColor: theme.colors.yellow },
+  followButtonText: {
+    color: theme.colors.text,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  followedButtonText: { color: theme.colors.background },
+  followInfo: {
+    color: theme.colors.muted,
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
   episodeList: { gap: 12 },
   skeleton: {
     flexDirection: 'row',

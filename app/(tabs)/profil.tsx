@@ -16,8 +16,10 @@ import { LegalLinkRow } from '@/components/more/legal-link-row';
 import { MoreLinkRow } from '@/components/more/more-link-row';
 import { NotificationPreferenceCard } from '@/components/more/notification-preference-card';
 import { SocialLinkGrid } from '@/components/more/social-link-grid';
-import { FavoriteEmissionCard } from '@/components/profile/favorite-emission-card';
+import { FollowedEmissionCard } from '@/components/profile/favorite-emission-card';
 import { FavoriteVideoCard } from '@/components/profile/favorite-video-card';
+import { NotificationComingSoonCard } from '@/components/profile/notification-coming-soon-card';
+import { NotificationDetailPreferences } from '@/components/profile/notification-detail-preferences';
 import { ProfileEmptyState } from '@/components/profile/profile-empty-state';
 import { ProfileSectionHeader } from '@/components/profile/profile-section-header';
 import { ProfileSummary } from '@/components/profile/profile-summary';
@@ -29,6 +31,7 @@ import type {
   FavoriteVideo,
   RecentlyWatchedVideo,
 } from '@/types/user-library';
+import { playRemoveHaptic } from '@/utils/haptics';
 
 const usefulLinkIcons = {
   website: 'globe-outline',
@@ -43,14 +46,16 @@ export default function ProfileScreen() {
     isHydrated,
     storageError,
     favoriteVideos,
-    favoriteEmissions,
+    followedEmissions,
     recentlyWatched,
     notificationsEnabled,
     removeFavoriteVideo,
-    removeFavoriteEmission,
+    removeFollowedEmission,
     clearRecentlyWatched,
     clearAllLibraryData,
     setNotificationsEnabled,
+    notificationPreferences,
+    setNotificationPreference,
   } = useUserLibrary();
 
   const openExternalUrl = async (url: string) => {
@@ -143,7 +148,7 @@ export default function ProfileScreen() {
             ) : null}
 
             <ProfileSummary
-              favoriteEmissionCount={favoriteEmissions.length}
+              followedEmissionCount={followedEmissions.length}
               favoriteVideoCount={favoriteVideos.length}
               recentCount={recentlyWatched.length}
             />
@@ -159,7 +164,10 @@ export default function ProfileScreen() {
                     <FavoriteVideoCard
                       key={video.videoId}
                       onOpen={() => openVideo(video)}
-                      onRemove={() => removeFavoriteVideo(video.videoId)}
+                      onRemove={() => {
+                        playRemoveHaptic();
+                        removeFavoriteVideo(video.videoId);
+                      }}
                       video={video}
                     />
                   ))}
@@ -170,14 +178,14 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.section}>
-              <ProfileSectionHeader title="Émissions favorites" />
-              {favoriteEmissions.length > 0 ? (
+              <ProfileSectionHeader title="Émissions suivies" />
+              {followedEmissions.length > 0 ? (
                 <ScrollView
                   contentContainerStyle={styles.horizontalList}
                   horizontal
                   showsHorizontalScrollIndicator={false}>
-                  {favoriteEmissions.map((emission) => (
-                    <FavoriteEmissionCard
+                  {followedEmissions.map((emission) => (
+                    <FollowedEmissionCard
                       emission={emission}
                       key={emission.slug}
                       onOpen={() =>
@@ -186,12 +194,15 @@ export default function ProfileScreen() {
                           params: { slug: emission.slug },
                         })
                       }
-                      onRemove={() => removeFavoriteEmission(emission.slug)}
+                      onRemove={() => {
+                        playRemoveHaptic();
+                        removeFollowedEmission(emission.slug);
+                      }}
                     />
                   ))}
                 </ScrollView>
               ) : (
-                <ProfileEmptyState message="Vous n’avez encore ajouté aucune émission aux favoris." />
+                <ProfileEmptyState message="Vous ne suivez encore aucune émission." />
               )}
             </View>
 
@@ -226,6 +237,13 @@ export default function ProfileScreen() {
                 enabled={notificationsEnabled}
                 onValueChange={setNotificationsEnabled}
               />
+              {notificationsEnabled ? (
+                <NotificationDetailPreferences
+                  onChange={setNotificationPreference}
+                  preferences={notificationPreferences}
+                />
+              ) : null}
+              <NotificationComingSoonCard />
             </View>
 
             <View style={styles.divider} />

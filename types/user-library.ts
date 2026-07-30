@@ -31,7 +31,6 @@ export type UserLibraryData = {
   favoriteVideos: FavoriteVideo[];
   favoriteEmissions: FavoriteEmission[];
   recentlyWatched: RecentlyWatchedVideo[];
-  preferences: {
-    notificationsEnabled: boolean;
-  };
+  preferences: NotificationPreferences;
 };
+import type { NotificationPreferences } from '@/types/notification-preferences';

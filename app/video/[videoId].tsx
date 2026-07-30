@@ -2,11 +2,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { YoutubePlayer, isValidYoutubeVideoId } from '@/components/video/youtube-player';
 import { theme } from '@/constants/theme';
+import { useActionFeedbackAnimation } from '@/hooks/use-action-feedback-animation';
 import { useUserLibrary } from '@/hooks/use-user-library';
+import { playAddHaptic, playRemoveHaptic } from '@/utils/haptics';
 
 function readParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? '' : value ?? '';
@@ -15,6 +18,7 @@ function readParam(value: string | string[] | undefined): string {
 export default function VideoScreen() {
   const insets = useSafeAreaInsets();
   const [externalOpenFailed, setExternalOpenFailed] = useState(false);
+  const { animate, animatedStyle } = useActionFeedbackAnimation();
   const {
     addRecentlyWatched,
     isHydrated,
@@ -84,27 +88,37 @@ export default function VideoScreen() {
           <Ionicons name="arrow-back" color={theme.colors.text} size={22} />
         </Pressable>
         <Text style={styles.screenTitle}>Lecture</Text>
-        <Pressable
-          accessibilityLabel={
-            isFavorite
-              ? 'Retirer cette vidéo des favoris'
-              : 'Ajouter cette vidéo aux favoris'
-          }
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !isHydrated || !canOpenYoutube }}
-          disabled={!isHydrated || !canOpenYoutube}
-          onPress={() => toggleVideoFavorite(libraryVideo)}
-          style={({ pressed }) => [
-            styles.favoriteButton,
-            (!isHydrated || !canOpenYoutube) && styles.disabledButton,
-            pressed && styles.pressedButton,
-          ]}>
-          <Ionicons
-            color={isFavorite ? theme.colors.yellow : theme.colors.text}
-            name={isFavorite ? 'heart' : 'heart-outline'}
-            size={21}
-          />
-        </Pressable>
+        <Animated.View style={animatedStyle}>
+          <Pressable
+            accessibilityLabel={
+              isFavorite
+                ? 'Retirer cette vidéo des favoris'
+                : 'Ajouter cette vidéo aux favoris'
+            }
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !isHydrated || !canOpenYoutube }}
+            disabled={!isHydrated || !canOpenYoutube}
+            onPress={() => {
+              animate();
+              if (isFavorite) {
+                playRemoveHaptic();
+              } else {
+                playAddHaptic();
+              }
+              toggleVideoFavorite(libraryVideo);
+            }}
+            style={({ pressed }) => [
+              styles.favoriteButton,
+              (!isHydrated || !canOpenYoutube) && styles.disabledButton,
+              pressed && styles.pressedButton,
+            ]}>
+            <Ionicons
+              color={isFavorite ? theme.colors.yellow : theme.colors.text}
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={21}
+            />
+          </Pressable>
+        </Animated.View>
       </View>
 
       <ScrollView

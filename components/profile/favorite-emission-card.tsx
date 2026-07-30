@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { theme } from '@/constants/theme';
 import type { FavoriteEmission } from '@/types/user-library';
 
-export function FavoriteEmissionCard({
+export function FollowedEmissionCard({
   emission,
   onOpen,
   onRemove,
@@ -31,12 +31,12 @@ export function FavoriteEmissionCard({
         </Text>
       </Pressable>
       <Pressable
-        accessibilityLabel={`Retirer l’émission ${emission.title} des favoris`}
+        accessibilityLabel={`Ne plus suivre l’émission ${emission.title}`}
         accessibilityRole="button"
         onPress={onRemove}
         style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}>
-        <Ionicons color={theme.colors.yellow} name="heart" size={16} />
-        <Text style={styles.removeText}>Retirer</Text>
+        <Ionicons color={theme.colors.yellow} name="notifications" size={16} />
+        <Text style={styles.removeText}>Ne plus suivre</Text>
       </Pressable>
     </View>
   );

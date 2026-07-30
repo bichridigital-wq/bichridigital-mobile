@@ -20,8 +20,8 @@ export function NotificationPreferenceCard({
       <View style={styles.content}>
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.description}>
-          Cette préférence sera utilisée lorsque les notifications de
-          l’application seront activées.
+          Activez cette préférence pour recevoir plus tard les alertes liées
+          aux émissions suivies et aux nouveaux contenus.
         </Text>
         <Text style={styles.localStatus}>
           Préférence locale : {enabled ? 'activée' : 'désactivée'}

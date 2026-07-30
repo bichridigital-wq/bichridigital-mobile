@@ -13,6 +13,9 @@ export function createEmptyUserLibrary(): UserLibraryData {
     recentlyWatched: [],
     preferences: {
       notificationsEnabled: false,
+      notifyNewVideos: true,
+      notifyLiveStarts: true,
+      notifyFollowedEmissions: true,
     },
   };
 }
@@ -74,6 +77,18 @@ function readStoredLibrary(value: unknown): UserLibraryData | null {
     recentlyWatched,
     preferences: {
       notificationsEnabled: candidate.preferences.notificationsEnabled,
+      notifyNewVideos:
+        typeof candidate.preferences.notifyNewVideos === 'boolean'
+          ? candidate.preferences.notifyNewVideos
+          : true,
+      notifyLiveStarts:
+        typeof candidate.preferences.notifyLiveStarts === 'boolean'
+          ? candidate.preferences.notifyLiveStarts
+          : true,
+      notifyFollowedEmissions:
+        typeof candidate.preferences.notifyFollowedEmissions === 'boolean'
+          ? candidate.preferences.notifyFollowedEmissions
+          : true,
     },
   };
 }

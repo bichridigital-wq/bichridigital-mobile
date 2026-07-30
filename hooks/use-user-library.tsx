@@ -14,6 +14,7 @@ import {
   loadUserLibrary,
   saveUserLibrary,
 } from '@/services/user-library-storage';
+import type { NotificationPreferenceKey } from '@/types/notification-preferences';
 import type {
   FavoriteEmission,
   FavoriteVideo,
@@ -29,19 +30,24 @@ type UserLibraryContextValue = {
   isHydrated: boolean;
   storageError: boolean;
   favoriteVideos: FavoriteVideo[];
-  favoriteEmissions: FavoriteEmission[];
+  followedEmissions: FavoriteEmission[];
   recentlyWatched: RecentlyWatchedVideo[];
   notificationsEnabled: boolean;
   isVideoFavorite: (videoId: string) => boolean;
   toggleVideoFavorite: (video: LibraryVideoInput) => void;
-  isEmissionFavorite: (slug: string) => boolean;
-  toggleEmissionFavorite: (emission: LibraryEmissionInput) => void;
+  isEmissionFollowed: (slug: string) => boolean;
+  toggleEmissionFollow: (emission: LibraryEmissionInput) => void;
   addRecentlyWatched: (video: LibraryVideoInput) => void;
   removeFavoriteVideo: (videoId: string) => void;
-  removeFavoriteEmission: (slug: string) => void;
+  removeFollowedEmission: (slug: string) => void;
   clearRecentlyWatched: () => void;
   clearAllLibraryData: () => void;
   setNotificationsEnabled: (value: boolean) => void;
+  notificationPreferences: UserLibraryData['preferences'];
+  setNotificationPreference: (
+    key: NotificationPreferenceKey,
+    value: boolean,
+  ) => void;
 };
 
 const UserLibraryContext = createContext<UserLibraryContextValue | null>(null);
@@ -136,7 +142,7 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
-  const removeFavoriteEmission = useCallback(
+  const removeFollowedEmission = useCallback(
     (slug: string) => {
       commit((current) => ({
         ...current,
@@ -148,7 +154,7 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
-  const toggleEmissionFavorite = useCallback(
+  const toggleEmissionFollow = useCallback(
     (emission: LibraryEmissionInput) => {
       if (!emission.slug.trim()) {
         return;
@@ -209,26 +215,38 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
+  const setNotificationPreference = useCallback(
+    (key: NotificationPreferenceKey, value: boolean) => {
+      commit((current) => ({
+        ...current,
+        preferences: { ...current.preferences, [key]: value },
+      }));
+    },
+    [commit],
+  );
+
   const value = useMemo<UserLibraryContextValue>(
     () => ({
       isHydrated,
       storageError,
       favoriteVideos: library.favoriteVideos,
-      favoriteEmissions: library.favoriteEmissions,
+      followedEmissions: library.favoriteEmissions,
       recentlyWatched: library.recentlyWatched,
       notificationsEnabled: library.preferences.notificationsEnabled,
       isVideoFavorite: (videoId) =>
         library.favoriteVideos.some((video) => video.videoId === videoId),
       toggleVideoFavorite,
-      isEmissionFavorite: (slug) =>
+      isEmissionFollowed: (slug) =>
         library.favoriteEmissions.some((emission) => emission.slug === slug),
-      toggleEmissionFavorite,
+      toggleEmissionFollow,
       addRecentlyWatched,
       removeFavoriteVideo,
-      removeFavoriteEmission,
+      removeFollowedEmission,
       clearRecentlyWatched,
       clearAllLibraryData,
       setNotificationsEnabled,
+      notificationPreferences: library.preferences,
+      setNotificationPreference,
     }),
     [
       addRecentlyWatched,
@@ -236,11 +254,12 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
       clearRecentlyWatched,
       isHydrated,
       library,
-      removeFavoriteEmission,
+      removeFollowedEmission,
       removeFavoriteVideo,
       setNotificationsEnabled,
+      setNotificationPreference,
       storageError,
-      toggleEmissionFavorite,
+      toggleEmissionFollow,
       toggleVideoFavorite,
     ],
   );

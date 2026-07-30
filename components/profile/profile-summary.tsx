@@ -4,16 +4,16 @@ import { theme } from '@/constants/theme';
 
 export function ProfileSummary({
   favoriteVideoCount,
-  favoriteEmissionCount,
+  followedEmissionCount,
   recentCount,
 }: {
   favoriteVideoCount: number;
-  favoriteEmissionCount: number;
+  followedEmissionCount: number;
   recentCount: number;
 }) {
   const items = [
     { label: 'Vidéos favorites', value: favoriteVideoCount },
-    { label: 'Émissions favorites', value: favoriteEmissionCount },
+    { label: 'Émissions suivies', value: followedEmissionCount },
     { label: 'Vidéos récentes', value: recentCount },
   ];
 
