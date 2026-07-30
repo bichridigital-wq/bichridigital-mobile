@@ -89,15 +89,6 @@ const mockVideos: Video[] = [
   },
 ];
 
-const mockLiveBroadcast: LiveBroadcast = {
-  id: 'mock-live-upcoming-001',
-  title: 'Prochain direct Bichridigital',
-  description: 'Diffusion simulée pour préparer le futur état du direct.',
-  thumbnailUrl: '',
-  scheduledStartTime: '2026-07-30T20:00:00.000Z',
-  status: 'upcoming',
-};
-
 async function getRemoteData<T>(path: string): Promise<T> {
   const response = await apiGet<ApiResponse<T>>(path);
 
@@ -142,7 +133,7 @@ export function getPlaylists(): Promise<Playlist[]> {
 
 export function getLiveBroadcast(): Promise<LiveBroadcast | null> {
   if (YOUTUBE_DATA_MODE === 'mock') {
-    return Promise.resolve(mockLiveBroadcast);
+    return Promise.resolve(null);
   }
 
   return getRemoteData<LiveBroadcast | null>('/youtube/live');

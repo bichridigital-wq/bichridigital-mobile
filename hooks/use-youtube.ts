@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   getFeaturedVideos,
@@ -12,6 +12,7 @@ import type { LiveBroadcast, Playlist, Video } from '@/types/youtube';
 type YoutubeQueryResult<T> = {
   data: T | null;
   loading: boolean;
+  refreshing: boolean;
   error: Error | null;
   reload: () => void;
 };
@@ -23,17 +24,28 @@ function toError(error: unknown): Error {
 function useYoutubeQuery<T>(loader: () => Promise<T>): YoutubeQueryResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
+  const hasLoadedRef = useRef(false);
+  const requestInFlightRef = useRef(false);
 
   const reload = useCallback(() => {
+    if (requestInFlightRef.current) {
+      return;
+    }
     setReloadCount((currentCount) => currentCount + 1);
   }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    setLoading(true);
+    requestInFlightRef.current = true;
+    if (hasLoadedRef.current) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
     loader()
@@ -48,8 +60,11 @@ function useYoutubeQuery<T>(loader: () => Promise<T>): YoutubeQueryResult<T> {
         }
       })
       .finally(() => {
+        requestInFlightRef.current = false;
+        hasLoadedRef.current = true;
         if (isMounted) {
           setLoading(false);
+          setRefreshing(false);
         }
       });
 
@@ -58,7 +73,7 @@ function useYoutubeQuery<T>(loader: () => Promise<T>): YoutubeQueryResult<T> {
     };
   }, [loader, reloadCount]);
 
-  return { data, loading, error, reload };
+  return { data, loading, refreshing, error, reload };
 }
 
 export function useFeaturedVideos(): YoutubeQueryResult<Video[]> {

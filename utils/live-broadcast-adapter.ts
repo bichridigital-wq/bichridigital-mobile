@@ -1,11 +1,15 @@
-import type { LiveBroadcast } from '@/types/youtube';
+import type {
+  LiveBroadcast,
+  ResolvedLiveState,
+  UpcomingBroadcast,
+} from '@/types/youtube';
 
 export type LivePresentation = {
   videoId: string;
   title: string;
   description: string;
   status: 'live' | 'upcoming' | 'offline';
-  scheduledStartTime: string;
+  scheduledStartTime?: string;
   actualStartTime?: string;
   dateLabel: string;
   relativeLabel: string;
@@ -112,4 +116,48 @@ export function adaptLiveBroadcast(
           : 'Direct terminé',
     thumbnailUrl: broadcast.thumbnailUrl.trim(),
   };
+}
+
+type ResolveLiveStateOptions = {
+  data: LiveBroadcast | null;
+  loading: boolean;
+  error: Error | null;
+  hasLoaded: boolean;
+  now?: Date;
+};
+
+export function resolveLiveState({
+  data,
+  loading,
+  error,
+  hasLoaded,
+  now = new Date(),
+}: ResolveLiveStateOptions): ResolvedLiveState {
+  if (!hasLoaded && loading) {
+    return { status: 'loading' };
+  }
+
+  if (data?.status === 'live') {
+    return { status: 'live', broadcast: data };
+  }
+
+  if (data?.status === 'upcoming' && data.scheduledStartTime) {
+    const scheduledTime = new Date(data.scheduledStartTime).getTime();
+    if (Number.isFinite(scheduledTime) && scheduledTime > now.getTime()) {
+      return {
+        status: 'upcoming',
+        broadcast: {
+          ...data,
+          status: 'upcoming',
+          scheduledStartTime: data.scheduledStartTime,
+        },
+      };
+    }
+  }
+
+  if (error) {
+    return { status: 'error', error };
+  }
+
+  return { status: 'offline' };
 }

@@ -23,10 +23,22 @@ export interface LiveBroadcast {
   title: string;
   description: string;
   thumbnailUrl: string;
-  scheduledStartTime: string;
+  scheduledStartTime?: string;
   actualStartTime?: string;
   status: 'upcoming' | 'live' | 'completed';
 }
+
+export type UpcomingBroadcast = LiveBroadcast & {
+  status: 'upcoming';
+  scheduledStartTime: string;
+};
+
+export type ResolvedLiveState =
+  | { status: 'loading' }
+  | { status: 'error'; error: Error }
+  | { status: 'live'; broadcast: LiveBroadcast }
+  | { status: 'upcoming'; broadcast: UpcomingBroadcast }
+  | { status: 'offline' };
 
 export interface Channel {
   id: string;

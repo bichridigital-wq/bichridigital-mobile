@@ -7,3 +7,7 @@ export function playAddHaptic(): void {
 export function playRemoveHaptic(): void {
   Haptics.selectionAsync().catch(() => undefined);
 }
+
+export function playLightHaptic(): void {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+}

@@ -2,21 +2,28 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
-const LIVE_POLL_INTERVAL_MS = 60_000;
+const MIN_POLL_INTERVAL_MS = 60_000;
 
 type UseLivePollingOptions = {
   loading: boolean;
+  refreshing?: boolean;
+  intervalMs: number;
   reload: () => void;
 };
 
-export function useLivePolling({ loading, reload }: UseLivePollingOptions): void {
+export function useLivePolling({
+  loading,
+  refreshing = false,
+  intervalMs,
+  reload,
+}: UseLivePollingOptions): boolean {
   const [focused, setFocused] = useState(false);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const requestInFlightRef = useRef(loading);
 
   useEffect(() => {
-    requestInFlightRef.current = loading;
-  }, [loading]);
+    requestInFlightRef.current = loading || refreshing;
+  }, [loading, refreshing]);
 
   const reloadIfIdle = useCallback(() => {
     if (requestInFlightRef.current) {
@@ -48,8 +55,11 @@ export function useLivePolling({ loading, reload }: UseLivePollingOptions): void
     }
 
     reloadIfIdle();
-    const intervalId = setInterval(reloadIfIdle, LIVE_POLL_INTERVAL_MS);
+    const safeIntervalMs = Math.max(MIN_POLL_INTERVAL_MS, intervalMs);
+    const intervalId = setInterval(reloadIfIdle, safeIntervalMs);
 
     return () => clearInterval(intervalId);
-  }, [appState, focused, reloadIfIdle]);
+  }, [appState, focused, intervalMs, reloadIfIdle]);
+
+  return focused && appState === 'active';
 }
