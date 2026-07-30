@@ -5,6 +5,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { NotificationProvider } from '@/hooks/use-notifications';
 import { UserLibraryProvider } from '@/hooks/use-user-library';
 
 export const unstable_settings = {
@@ -17,14 +18,16 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <UserLibraryProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="video/[videoId]" options={{ headerShown: false }} />
-            <Stack.Screen name="emission/[slug]" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="light" />
-        </ThemeProvider>
+        <NotificationProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="video/[videoId]" options={{ headerShown: false }} />
+              <Stack.Screen name="emission/[slug]" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="light" />
+          </ThemeProvider>
+        </NotificationProvider>
       </UserLibraryProvider>
     </SafeAreaProvider>
   );

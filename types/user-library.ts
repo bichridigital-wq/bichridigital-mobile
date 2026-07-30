@@ -1,3 +1,5 @@
+import type { NotificationPreferences } from '@/types/notification-preferences';
+
 export type LibraryVideoInput = {
   videoId: string;
   title: string;
@@ -33,4 +35,3 @@ export type UserLibraryData = {
   recentlyWatched: RecentlyWatchedVideo[];
   preferences: NotificationPreferences;
 };
-import type { NotificationPreferences } from '@/types/notification-preferences';

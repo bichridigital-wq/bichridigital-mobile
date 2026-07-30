@@ -18,7 +18,7 @@ import { NotificationPreferenceCard } from '@/components/more/notification-prefe
 import { SocialLinkGrid } from '@/components/more/social-link-grid';
 import { FollowedEmissionCard } from '@/components/profile/favorite-emission-card';
 import { FavoriteVideoCard } from '@/components/profile/favorite-video-card';
-import { NotificationComingSoonCard } from '@/components/profile/notification-coming-soon-card';
+import { NotificationDeviceStatusCard } from '@/components/profile/notification-device-status-card';
 import { NotificationDetailPreferences } from '@/components/profile/notification-detail-preferences';
 import { ProfileEmptyState } from '@/components/profile/profile-empty-state';
 import { ProfileSectionHeader } from '@/components/profile/profile-section-header';
@@ -26,6 +26,7 @@ import { ProfileSummary } from '@/components/profile/profile-summary';
 import { RecentVideoRow } from '@/components/profile/recent-video-row';
 import { usefulLinks } from '@/constants/more-content';
 import { theme } from '@/constants/theme';
+import { useNotifications } from '@/hooks/use-notifications';
 import { useUserLibrary } from '@/hooks/use-user-library';
 import type {
   FavoriteVideo,
@@ -48,15 +49,45 @@ export default function ProfileScreen() {
     favoriteVideos,
     followedEmissions,
     recentlyWatched,
-    notificationsEnabled,
     removeFavoriteVideo,
     removeFollowedEmission,
     clearRecentlyWatched,
     clearAllLibraryData,
-    setNotificationsEnabled,
     notificationPreferences,
     setNotificationPreference,
   } = useUserLibrary();
+  const {
+    permissionStatus,
+    notificationsEnabled,
+    isInitializing: isInitializingNotifications,
+    isRequestingPermission,
+    isSchedulingTest,
+    testFeedback,
+    lastError: notificationError,
+    enableNotifications,
+    disableNotifications,
+    openSystemSettings,
+    sendTestNotification,
+  } = useNotifications();
+
+  const updateNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      disableNotifications();
+      return;
+    }
+
+    const status = await enableNotifications();
+    if (status === 'denied') {
+      Alert.alert(
+        'Notifications désactivées',
+        'L’autorisation a été refusée. Vous pouvez l’activer dans les réglages de votre appareil.',
+        [
+          { text: 'Plus tard', style: 'cancel' },
+          { text: 'Ouvrir les réglages', onPress: openSystemSettings },
+        ],
+      );
+    }
+  };
 
   const openExternalUrl = async (url: string) => {
     if (!url) {
@@ -234,8 +265,13 @@ export default function ProfileScreen() {
             <View style={styles.section}>
               <ProfileSectionHeader title="Préférences" />
               <NotificationPreferenceCard
+                disabled={
+                  isInitializingNotifications || isRequestingPermission
+                }
                 enabled={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
+                onValueChange={(enabled) => {
+                  void updateNotifications(enabled);
+                }}
               />
               {notificationsEnabled ? (
                 <NotificationDetailPreferences
@@ -243,7 +279,20 @@ export default function ProfileScreen() {
                   preferences={notificationPreferences}
                 />
               ) : null}
-              <NotificationComingSoonCard />
+              <NotificationDeviceStatusCard
+                enabled={notificationsEnabled}
+                isInitializing={isInitializingNotifications}
+                isSchedulingTest={isSchedulingTest}
+                lastError={notificationError}
+                onOpenSettings={() => {
+                  void openSystemSettings();
+                }}
+                onSendTest={() => {
+                  void sendTestNotification();
+                }}
+                status={permissionStatus}
+                testFeedback={testFeedback}
+              />
             </View>
 
             <View style={styles.divider} />

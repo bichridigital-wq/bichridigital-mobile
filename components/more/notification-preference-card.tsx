@@ -4,33 +4,39 @@ import { StyleSheet, Switch, Text, View } from 'react-native';
 import { theme } from '@/constants/theme';
 
 type NotificationPreferenceCardProps = {
+  disabled?: boolean;
   enabled: boolean;
   onValueChange: (value: boolean) => void;
 };
 
 export function NotificationPreferenceCard({
+  disabled = false,
   enabled,
   onValueChange,
 }: NotificationPreferenceCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.icon}>
-        <Ionicons name="notifications-outline" size={21} color={theme.colors.yellow} />
+        <Ionicons
+          name="notifications-outline"
+          size={21}
+          color={theme.colors.yellow}
+        />
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.description}>
-          Activez cette préférence pour recevoir plus tard les alertes liées
-          aux émissions suivies et aux nouveaux contenus.
+          Autorisez les notifications locales de Bichridigital sur cet appareil.
         </Text>
         <Text style={styles.localStatus}>
-          Préférence locale : {enabled ? 'activée' : 'désactivée'}
+          Autorisation et préférence : {enabled ? 'activées' : 'désactivées'}
         </Text>
       </View>
       <Switch
-        accessibilityLabel="Préférence locale pour les futures notifications"
+        accessibilityLabel="Autoriser les notifications Bichridigital"
         accessibilityRole="switch"
-        accessibilityState={{ checked: enabled }}
+        accessibilityState={{ checked: enabled, disabled }}
+        disabled={disabled}
         onValueChange={onValueChange}
         thumbColor={theme.colors.text}
         trackColor={{ false: '#34405F', true: theme.colors.primary }}
@@ -60,21 +66,9 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     backgroundColor: 'rgba(252,205,18,0.1)',
   },
-  content: {
-    minWidth: 0,
-    flex: 1,
-    gap: 4,
-  },
-  title: {
-    color: theme.colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  description: {
-    color: theme.colors.muted,
-    fontSize: 11,
-    lineHeight: 16,
-  },
+  content: { minWidth: 0, flex: 1, gap: 4 },
+  title: { color: theme.colors.text, fontSize: 14, fontWeight: '700' },
+  description: { color: theme.colors.muted, fontSize: 11, lineHeight: 16 },
   localStatus: {
     color: theme.colors.yellow,
     fontSize: 10,

@@ -40,6 +40,9 @@ export function NotificationDetailPreferences({
           />
         </View>
       ))}
+      <Text style={styles.note}>
+        Ces choix seront utilisés par les prochaines alertes automatiques.
+      </Text>
     </View>
   );
 }
@@ -65,4 +68,13 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.07)',
   },
   label: { flex: 1, color: theme.colors.text, fontSize: 13, fontWeight: '600' },
+  note: {
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.07)',
+    color: theme.colors.muted,
+    fontSize: 10,
+    lineHeight: 15,
+  },
 });
