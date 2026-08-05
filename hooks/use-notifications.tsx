@@ -23,10 +23,24 @@ import {
   requestLocalNotificationPermission,
   scheduleLocalTestNotification,
 } from '@/services/local-notifications';
+import { getInstallationId } from '@/services/installation-id';
+import {
+  getEasProjectId,
+  getPushAvailabilityReason,
+  getPushRuntimeEnvironment,
+  registerPushInstallation,
+  syncPushPreferences,
+} from '@/services/push-registration';
 import type {
   NotificationPermissionStatus,
   NotificationTestFeedback,
 } from '@/types/notifications';
+import type {
+  PushAvailabilityReason,
+  PushRegistrationPayload,
+  PushRegistrationStatus,
+  PushRuntimeEnvironment,
+} from '@/types/push-notifications';
 
 type NotificationContextValue = {
   isInitialized: boolean;
@@ -39,6 +53,12 @@ type NotificationContextValue = {
   isSchedulingTest: boolean;
   testFeedback: NotificationTestFeedback;
   lastError: string | null;
+  pushRuntimeEnvironment: PushRuntimeEnvironment;
+  pushAvailabilityReason: PushAvailabilityReason;
+  pushRegistrationStatus: PushRegistrationStatus;
+  hasEasProjectId: boolean;
+  installationId: string | null;
+  hasExpoPushToken: boolean;
   enableNotifications: () => Promise<NotificationPermissionStatus>;
   disableNotifications: () => void;
   refreshPermissionStatus: () => Promise<NotificationPermissionStatus>;
@@ -52,6 +72,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const {
     isHydrated,
     notificationsEnabled,
+    notificationPreferences,
     setNotificationsEnabled,
   } = useUserLibrary();
   const [permissionStatus, setPermissionStatus] =
@@ -62,9 +83,46 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [testFeedback, setTestFeedback] =
     useState<NotificationTestFeedback>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [pushRegistrationStatus, setPushRegistrationStatus] =
+    useState<PushRegistrationStatus>('idle');
+  const [pushRegistration, setPushRegistration] =
+    useState<PushRegistrationPayload | null>(null);
+  const [installationId, setInstallationId] = useState<string | null>(null);
   const refreshRef = useRef<Promise<NotificationPermissionStatus> | null>(null);
   const requestRef = useRef<Promise<NotificationPermissionStatus> | null>(null);
   const handledResponsesRef = useRef(new Set<string>());
+  const registrationRef = useRef<Promise<void> | null>(null);
+  const syncedPreferencesRef = useRef<string | null>(null);
+  const pushRuntimeEnvironment = getPushRuntimeEnvironment();
+  const pushAvailabilityReason = getPushAvailabilityReason();
+  const hasEasProjectId = getEasProjectId() !== null;
+
+  const registerForPush = useCallback(() => {
+    if (registrationRef.current) {
+      return registrationRef.current;
+    }
+    if (getPushAvailabilityReason() !== 'available') {
+      setPushRegistrationStatus('not-available');
+      return Promise.resolve();
+    }
+
+    setPushRegistrationStatus('registering');
+    const operation = registerPushInstallation(notificationPreferences)
+      .then((registration) => {
+        setPushRegistration(registration);
+        setInstallationId(registration.installationId);
+        syncedPreferencesRef.current = JSON.stringify(registration.preferences);
+        setPushRegistrationStatus('registered');
+      })
+      .catch(() => {
+        setPushRegistrationStatus('error');
+      })
+      .finally(() => {
+        registrationRef.current = null;
+      });
+    registrationRef.current = operation;
+    return operation;
+  }, [notificationPreferences]);
 
   const refreshPermissionStatus = useCallback(() => {
     if (refreshRef.current) {
@@ -97,6 +155,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     Promise.all([
       ensureAndroidNotificationChannel(),
       refreshPermissionStatus(),
+      getInstallationId().then((id) => {
+        if (mounted) {
+          setInstallationId(id);
+        }
+      }),
     ])
       .catch(() => {
         if (mounted) {
@@ -177,6 +240,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         setPermissionStatus(status);
         setNotificationsEnabled(status === 'granted');
         setLastError(null);
+        if (status === 'granted') {
+          void registerForPush();
+        }
         return status;
       })
       .catch(() => {
@@ -193,12 +259,52 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
     requestRef.current = operation;
     return operation;
-  }, [setNotificationsEnabled]);
+  }, [registerForPush, setNotificationsEnabled]);
 
   const disableNotifications = useCallback(() => {
     setNotificationsEnabled(false);
     setTestFeedback(null);
   }, [setNotificationsEnabled]);
+
+  useEffect(() => {
+    if (
+      isHydrated &&
+      !isInitializing &&
+      notificationsEnabled &&
+      permissionStatus === 'granted' &&
+      !pushRegistration
+    ) {
+      void registerForPush();
+    }
+  }, [
+    isHydrated,
+    isInitializing,
+    notificationsEnabled,
+    permissionStatus,
+    pushRegistration,
+    registerForPush,
+  ]);
+
+  useEffect(() => {
+    if (!pushRegistration || !notificationsEnabled) {
+      return;
+    }
+
+    const serializedPreferences = JSON.stringify(notificationPreferences);
+    if (syncedPreferencesRef.current === serializedPreferences) {
+      return;
+    }
+
+    setPushRegistrationStatus('syncing');
+    void syncPushPreferences(pushRegistration, notificationPreferences)
+      .then(() => {
+        syncedPreferencesRef.current = serializedPreferences;
+        setPushRegistrationStatus('registered');
+      })
+      .catch(() => {
+        setPushRegistrationStatus('error');
+      });
+  }, [notificationPreferences, notificationsEnabled, pushRegistration]);
 
   const openSystemSettings = useCallback(async () => {
     try {
@@ -242,6 +348,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       isSchedulingTest,
       testFeedback,
       lastError,
+      pushRuntimeEnvironment,
+      pushAvailabilityReason,
+      pushRegistrationStatus,
+      hasEasProjectId,
+      installationId,
+      hasExpoPushToken: Boolean(pushRegistration?.expoPushToken),
       enableNotifications,
       disableNotifications,
       refreshPermissionStatus,
@@ -254,7 +366,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       isInitializing,
       isRequestingPermission,
       isSchedulingTest,
+      installationId,
       lastError,
+      pushAvailabilityReason,
+      pushRegistration,
+      pushRegistrationStatus,
+      pushRuntimeEnvironment,
+      hasEasProjectId,
       notificationsEnabled,
       openSystemSettings,
       permissionStatus,

@@ -68,6 +68,12 @@ export default function ProfileScreen() {
     disableNotifications,
     openSystemSettings,
     sendTestNotification,
+    pushRuntimeEnvironment,
+    pushAvailabilityReason,
+    pushRegistrationStatus,
+    hasEasProjectId,
+    installationId,
+    hasExpoPushToken,
   } = useNotifications();
 
   const updateNotifications = async (enabled: boolean) => {
@@ -292,6 +298,12 @@ export default function ProfileScreen() {
                 }}
                 status={permissionStatus}
                 testFeedback={testFeedback}
+                pushRuntimeEnvironment={pushRuntimeEnvironment}
+                pushAvailabilityReason={pushAvailabilityReason}
+                pushRegistrationStatus={pushRegistrationStatus}
+                hasEasProjectId={hasEasProjectId}
+                installationId={installationId}
+                hasExpoPushToken={hasExpoPushToken}
               />
             </View>
 

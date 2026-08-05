@@ -11,6 +11,10 @@ type ApiGetOptions = {
   debugLabel?: string;
 };
 
+type ApiPostOptions = ApiGetOptions & {
+  body: unknown;
+};
+
 function buildApiUrl(path: string): string {
   if (!BICHRIDIGITAL_API_URL) {
     throw new ApiClientError(
@@ -85,6 +89,54 @@ export async function apiGet<T>(
       throw error;
     }
 
+    throw new Error("Impossible de contacter l'API Bichridigital.");
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function apiPost<T>(
+  path: string,
+  options: ApiPostOptions,
+): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? API_REQUEST_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const url = buildApiUrl(path);
+
+  try {
+    if (__DEV__ && options.debugLabel) {
+      console.info(`[${options.debugLabel}] POST ${url}`);
+    }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      body: JSON.stringify(options.body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new ApiClientError(
+        `L'API Bichridigital a retourné une erreur (${response.status}).`,
+      );
+    }
+
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    return (await response.json()) as T;
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error("L'API Bichridigital n'a pas répondu dans le délai imparti.");
+    }
+    if (error instanceof ApiClientError) {
+      throw error;
+    }
     throw new Error("Impossible de contacter l'API Bichridigital.");
   } finally {
     clearTimeout(timeoutId);

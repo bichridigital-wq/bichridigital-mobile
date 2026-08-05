@@ -12,6 +12,11 @@ import type {
   NotificationPermissionStatus,
   NotificationTestFeedback,
 } from '@/types/notifications';
+import type {
+  PushAvailabilityReason,
+  PushRegistrationStatus,
+  PushRuntimeEnvironment,
+} from '@/types/push-notifications';
 
 const statusLabels: Record<NotificationPermissionStatus, string> = {
   undetermined: 'Autorisation non demandée',
@@ -29,6 +34,35 @@ type Props = {
   onSendTest: () => void;
   status: NotificationPermissionStatus;
   testFeedback: NotificationTestFeedback;
+  pushRuntimeEnvironment: PushRuntimeEnvironment;
+  pushAvailabilityReason: PushAvailabilityReason;
+  pushRegistrationStatus: PushRegistrationStatus;
+  hasEasProjectId: boolean;
+  installationId: string | null;
+  hasExpoPushToken: boolean;
+};
+
+const runtimeLabels: Record<PushRuntimeEnvironment, string> = {
+  'expo-go': 'Expo Go',
+  'development-build': 'Development build',
+  production: 'Production',
+};
+
+const availabilityLabels: Record<PushAvailabilityReason, string> = {
+  available: 'Push Expo disponible',
+  'expo-go': 'Push indisponible dans Expo Go',
+  simulator: 'Appareil physique requis',
+  'missing-project-id': 'projectId EAS absent',
+  'unsupported-platform': 'Plateforme non prise en charge',
+};
+
+const registrationLabels: Record<PushRegistrationStatus, string> = {
+  idle: 'Non enregistré',
+  'not-available': 'Non disponible',
+  registering: 'Enregistrement…',
+  registered: 'Enregistré auprès du service',
+  syncing: 'Synchronisation…',
+  error: 'API distante non joignable ou non prête',
 };
 
 export function NotificationDeviceStatusCard({
@@ -40,6 +74,12 @@ export function NotificationDeviceStatusCard({
   onSendTest,
   status,
   testFeedback,
+  pushRuntimeEnvironment,
+  pushAvailabilityReason,
+  pushRegistrationStatus,
+  hasEasProjectId,
+  installationId,
+  hasExpoPushToken,
 }: Props) {
   return (
     <View style={styles.card}>
@@ -61,6 +101,20 @@ export function NotificationDeviceStatusCard({
         alertes automatiques lors d’un direct ou d’une nouvelle vidéo seront
         ajoutées avec le service de notifications distant.
       </Text>
+      <View style={styles.pushDetails}>
+        <Text style={styles.detail}>Environnement : {runtimeLabels[pushRuntimeEnvironment]}</Text>
+        <Text style={styles.detail}>{availabilityLabels[pushAvailabilityReason]}</Text>
+        <Text style={styles.detail}>
+          Configuration EAS : {hasEasProjectId ? 'projectId présent' : 'projectId absent'}
+        </Text>
+        <Text style={styles.detail}>
+          Enregistrement distant : {registrationLabels[pushRegistrationStatus]}
+        </Text>
+        <Text style={styles.detail}>
+          Installation : {installationId ? 'identifiée' : 'en attente'} · Token Expo :{' '}
+          {hasExpoPushToken ? 'obtenu' : 'absent'}
+        </Text>
+      </View>
       {lastError ? (
         <Text accessibilityRole="alert" style={styles.error}>
           {lastError}
@@ -133,6 +187,13 @@ const styles = StyleSheet.create({
   title: { color: theme.colors.text, fontSize: 13, fontWeight: '800' },
   status: { color: theme.colors.yellow, fontSize: 11, fontWeight: '700' },
   text: { color: theme.colors.muted, fontSize: 11, lineHeight: 17 },
+  pushDetails: {
+    gap: 4,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.035)',
+  },
+  detail: { color: theme.colors.muted, fontSize: 10, lineHeight: 15 },
   error: { color: '#FF9B9B', fontSize: 11, lineHeight: 16 },
   feedback: { color: theme.colors.yellow, fontSize: 11, fontWeight: '700' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
