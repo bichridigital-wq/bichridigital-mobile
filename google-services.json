@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1060264995223",
+    "project_id": "bichridigital-32aeb",
+    "storage_bucket": "bichridigital-32aeb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1060264995223:android:02366d94799b7a2a2e7cd2",
+        "android_client_info": {
+          "package_name": "com.bichridigital.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0Me3A3ShGFftd_67y-kelgnbriUhBbcw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
