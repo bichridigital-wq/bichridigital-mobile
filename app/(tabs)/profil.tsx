@@ -64,25 +64,58 @@ export default function ProfileScreen() {
     isSchedulingTest,
     testFeedback,
     lastError: notificationError,
-    enableNotifications,
-    disableNotifications,
+    enablePushNotifications,
+    unregisterPushNotifications,
+    retryPushRegistration,
+    syncPushPreferences,
     openSystemSettings,
     sendTestNotification,
     pushRuntimeEnvironment,
     pushAvailabilityReason,
     pushRegistrationStatus,
+    preferenceSyncStatus,
+    installationIdStatus,
+    installationIdKind,
     hasEasProjectId,
     installationId,
-    hasExpoPushToken,
+    isPushRegistered,
+    isPushOperationPending,
+    canAskPermissionAgain,
+    pushError,
   } = useNotifications();
+
+  const maskedInstallationId = installationId
+    ? `••••••••-••••-••••-••••-${installationId.slice(-12)}`
+    : null;
+
+  const confirmPushUnregistration = () => {
+    Alert.alert(
+      'Désactiver les notifications Push ?',
+      'L’appareil sera désinscrit du serveur. Cette action ne révoque pas l’autorisation système et conserve vos choix locaux.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Désactiver',
+          style: 'destructive',
+          onPress: () => {
+            void unregisterPushNotifications().then((success) => {
+              if (success) {
+                Alert.alert('Notifications Push désactivées');
+              }
+            });
+          },
+        },
+      ],
+    );
+  };
 
   const updateNotifications = async (enabled: boolean) => {
     if (!enabled) {
-      disableNotifications();
+      confirmPushUnregistration();
       return;
     }
 
-    const status = await enableNotifications();
+    const status = await enablePushNotifications();
     if (status === 'denied') {
       Alert.alert(
         'Notifications désactivées',
@@ -146,7 +179,15 @@ export default function ProfileScreen() {
         {
           text: 'Effacer',
           style: 'destructive',
-          onPress: clearAllLibraryData,
+          onPress: () => {
+            if (!isPushRegistered) {
+              clearAllLibraryData();
+              return;
+            }
+            void unregisterPushNotifications().then((success) => {
+              if (success) clearAllLibraryData();
+            });
+          },
         },
       ],
     );
@@ -272,7 +313,9 @@ export default function ProfileScreen() {
               <ProfileSectionHeader title="Préférences" />
               <NotificationPreferenceCard
                 disabled={
-                  isInitializingNotifications || isRequestingPermission
+                  isInitializingNotifications ||
+                  isRequestingPermission ||
+                  isPushOperationPending
                 }
                 enabled={notificationsEnabled}
                 onValueChange={(enabled) => {
@@ -289,21 +332,37 @@ export default function ProfileScreen() {
                 enabled={notificationsEnabled}
                 isInitializing={isInitializingNotifications}
                 isSchedulingTest={isSchedulingTest}
+                isPushOperationPending={isPushOperationPending}
                 lastError={notificationError}
+                pushError={pushError}
+                canAskPermissionAgain={canAskPermissionAgain}
+                onEnablePush={() => {
+                  void enablePushNotifications();
+                }}
                 onOpenSettings={() => {
                   void openSystemSettings();
+                }}
+                onRetryRegistration={() => {
+                  void retryPushRegistration();
+                }}
+                onRetrySync={() => {
+                  void syncPushPreferences();
                 }}
                 onSendTest={() => {
                   void sendTestNotification();
                 }}
+                onUnregister={confirmPushUnregistration}
                 status={permissionStatus}
                 testFeedback={testFeedback}
                 pushRuntimeEnvironment={pushRuntimeEnvironment}
                 pushAvailabilityReason={pushAvailabilityReason}
                 pushRegistrationStatus={pushRegistrationStatus}
+                preferenceSyncStatus={preferenceSyncStatus}
+                installationIdStatus={installationIdStatus}
+                installationIdKind={installationIdKind}
                 hasEasProjectId={hasEasProjectId}
-                installationId={installationId}
-                hasExpoPushToken={hasExpoPushToken}
+                maskedInstallationId={maskedInstallationId}
+                isPushRegistered={isPushRegistered}
               />
             </View>
 

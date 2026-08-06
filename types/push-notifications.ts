@@ -4,27 +4,44 @@ export type PushRuntimeEnvironment =
   | 'expo-go'
   | 'development-build'
   | 'production';
-
 export type PushAvailabilityReason =
   | 'available'
   | 'expo-go'
   | 'simulator'
   | 'missing-project-id'
   | 'unsupported-platform';
-
 export type PushRegistrationStatus =
-  | 'idle'
-  | 'not-available'
+  | 'initializing'
+  | 'unsupported'
+  | 'expo-go'
+  | 'simulator'
+  | 'missing-project-id'
+  | 'permission-undetermined'
+  | 'permission-denied'
+  | 'ready'
   | 'registering'
   | 'registered'
+  | 'unregistering'
+  | 'unregistered'
+  | 'network-error'
+  | 'server-error';
+export type PreferenceSyncStatus =
+  | 'idle'
+  | 'synced'
+  | 'pending'
   | 'syncing'
-  | 'error';
+  | 'network-error'
+  | 'server-error';
+
+export type PushServerPreferences = NotificationPreferences & {
+  followedEmissionSlugs: string[];
+};
 
 export type PushRegistrationPayload = {
   installationId: string;
   expoPushToken: string;
   platform: 'android' | 'ios';
-  runtimeEnvironment: PushRuntimeEnvironment;
+  runtimeEnvironment: Exclude<PushRuntimeEnvironment, 'expo-go'>;
   appVersion: string | null;
   device: {
     brand: string | null;
@@ -32,6 +49,9 @@ export type PushRegistrationPayload = {
     osName: string | null;
     osVersion: string | null;
   };
-  preferences: NotificationPreferences;
+  locale: string | null;
+  timezone: string | null;
+  preferences: PushServerPreferences;
 };
 
+export type PushRegistration = PushRegistrationPayload;

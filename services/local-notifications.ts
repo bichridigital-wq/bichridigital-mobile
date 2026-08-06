@@ -1,7 +1,16 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import type { NotificationPermissionStatus } from '@/types/notifications';
+import type {
+  NotificationPermissionSnapshot,
+  NotificationPermissionStatus,
+} from '@/types/notifications';
+import {
+  getSafeNotificationDestination,
+} from '@/utils/push-navigation';
+
+export { getSafeNotificationDestination } from '@/utils/push-navigation';
+export type { SafeNotificationDestination } from '@/utils/push-navigation';
 
 export const NOTIFICATION_CHANNEL_ID = 'bichridigital-general';
 export const PROFILE_NOTIFICATION_ROUTE = '/(tabs)/profil';
@@ -66,12 +75,20 @@ function mapPermission(
   return 'undetermined';
 }
 
-export async function getLocalNotificationPermission() {
-  return mapPermission(await Notifications.getPermissionsAsync());
+export async function getNotificationPermissionSnapshot(): Promise<NotificationPermissionSnapshot> {
+  const permissions = await Notifications.getPermissionsAsync();
+  return {
+    status: mapPermission(permissions),
+    canAskAgain: permissions.canAskAgain,
+  };
 }
 
-export async function requestLocalNotificationPermission() {
-  return mapPermission(await Notifications.requestPermissionsAsync());
+export async function requestNotificationPermissionSnapshot(): Promise<NotificationPermissionSnapshot> {
+  const permissions = await Notifications.requestPermissionsAsync();
+  return {
+    status: mapPermission(permissions),
+    canAskAgain: permissions.canAskAgain,
+  };
 }
 
 export async function scheduleLocalTestNotification() {
@@ -95,13 +112,11 @@ export async function scheduleLocalTestNotification() {
   });
 }
 
-export function isSafeProfileNotificationResponse(
+export function getSafeNotificationResponseDestination(
   response: Notifications.NotificationResponse,
 ) {
-  const data = response.notification.request.content.data;
-  return (
-    data.type === TEST_NOTIFICATION_TYPE &&
-    data.route === PROFILE_NOTIFICATION_ROUTE
+  return getSafeNotificationDestination(
+    response.notification.request.content.data,
   );
 }
 

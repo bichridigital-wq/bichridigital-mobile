@@ -1,33 +1,95 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 
-const INSTALLATION_ID_STORAGE_KEY = 'bichridigital:installation-id:v1';
-let installationIdPromise: Promise<string> | null = null;
+import {
+  parseInstallationIdMigration,
+  resolveInstallationId,
+  type InstallationIdInspection,
+  type InstallationIdResolution,
+} from '@/utils/installation-id';
 
-function createInstallationId() {
-  const randomPart = Array.from({ length: 4 }, () =>
-    Math.random().toString(36).slice(2),
-  ).join('');
+export type {
+  InstallationIdInspection,
+  InstallationIdKind,
+  InstallationIdStatus,
+} from '@/utils/installation-id';
+export {
+  isLegacyInstallationId,
+  isUuidV4InstallationId,
+  normalizeGeneratedUuid,
+} from '@/utils/installation-id';
 
-  return `install_${Date.now().toString(36)}_${randomPart}`;
+export const INSTALLATION_ID_STORAGE_KEY = 'bichridigital:installation-id:v1';
+export const INSTALLATION_ID_MIGRATION_STORAGE_KEY =
+  'bichridigital:installation-id-migration:v1';
+export const LEGACY_INSTALLATION_ID_STORAGE_KEY =
+  'bichridigital:installation-id-legacy:v1';
+
+let inspectionPromise: Promise<InstallationIdInspection> | null = null;
+
+function createSecureInstallationId() {
+  return Crypto.randomUUID();
 }
 
-async function loadOrCreateInstallationId() {
-  const storedId = await AsyncStorage.getItem(INSTALLATION_ID_STORAGE_KEY);
-  if (storedId?.startsWith('install_')) {
-    return storedId;
+async function persistResolution(resolution: InstallationIdResolution) {
+  const migration = resolution.inspection;
+
+  if (resolution.legacyBackup) {
+    await AsyncStorage.multiSet([
+      [LEGACY_INSTALLATION_ID_STORAGE_KEY, resolution.legacyBackup],
+      [INSTALLATION_ID_MIGRATION_STORAGE_KEY, JSON.stringify(migration)],
+    ]);
+  } else if (resolution.shouldPersistMigration) {
+    await AsyncStorage.setItem(
+      INSTALLATION_ID_MIGRATION_STORAGE_KEY,
+      JSON.stringify(migration),
+    );
   }
-
-  const installationId = createInstallationId();
-  await AsyncStorage.setItem(INSTALLATION_ID_STORAGE_KEY, installationId);
-  return installationId;
+  if (resolution.shouldPersistPrimary) {
+    await AsyncStorage.setItem(
+      INSTALLATION_ID_STORAGE_KEY,
+      migration.installationId,
+    );
+  }
+  return migration;
 }
 
-export function getInstallationId() {
-  installationIdPromise ??= loadOrCreateInstallationId().catch((error) => {
-    installationIdPromise = null;
+export async function inspectInstallationIdMigration(): Promise<InstallationIdInspection> {
+  const [storedId, storedMigrationValue] = await Promise.all([
+    AsyncStorage.getItem(INSTALLATION_ID_STORAGE_KEY),
+    AsyncStorage.getItem(INSTALLATION_ID_MIGRATION_STORAGE_KEY),
+  ]);
+  return persistResolution(resolveInstallationId(
+    storedId,
+    parseInstallationIdMigration(storedMigrationValue),
+    createSecureInstallationId,
+  ));
+}
+
+export function getOrCreateInstallationId() {
+  inspectionPromise ??= inspectInstallationIdMigration().catch((error) => {
+    inspectionPromise = null;
     throw error;
   });
-
-  return installationIdPromise;
+  return inspectionPromise;
 }
 
+export async function completeInstallationIdMigration() {
+  const inspection = await getOrCreateInstallationId();
+  if (inspection.status !== 'migration-pending') return inspection;
+
+  const completed: InstallationIdInspection = {
+    ...inspection,
+    status: 'ready',
+  };
+  await AsyncStorage.multiSet([
+    [INSTALLATION_ID_MIGRATION_STORAGE_KEY, JSON.stringify(completed)],
+  ]);
+  await AsyncStorage.removeItem(LEGACY_INSTALLATION_ID_STORAGE_KEY);
+  inspectionPromise = Promise.resolve(completed);
+  return completed;
+}
+
+export async function getInstallationId() {
+  return (await getOrCreateInstallationId()).installationId;
+}

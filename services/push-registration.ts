@@ -3,16 +3,28 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { apiPost } from '@/services/api-client';
-import { getInstallationId } from '@/services/installation-id';
+import { apiDelete, apiPatch, apiPost } from '@/services/api-client';
+import {
+  completeInstallationIdMigration,
+  getOrCreateInstallationId,
+} from '@/services/installation-id';
 import type { NotificationPreferences } from '@/types/notification-preferences';
 import type {
   PushAvailabilityReason,
+  PushRegistration,
   PushRegistrationPayload,
   PushRuntimeEnvironment,
+  PushServerPreferences,
 } from '@/types/push-notifications';
+import { createPushPreferences } from '@/utils/push-preferences';
+
+export { createPushPreferences } from '@/utils/push-preferences';
 
 export const PUSH_REGISTRATION_PATH = '/api/push/register';
+export const PUSH_PREFERENCES_PATH = '/api/push/preferences';
+export const PUSH_UNREGISTER_PATH = '/api/push/unregister';
+
+const EXPO_PUSH_TOKEN_PATTERN = /^(Expo(nent)?PushToken)\[[^\]]+\]$/;
 
 export function getPushRuntimeEnvironment(): PushRuntimeEnvironment {
   if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
@@ -28,7 +40,6 @@ export function getEasProjectId(): string | null {
     typeof configuredProjectId === 'string'
       ? configuredProjectId
       : embeddedProjectId;
-
   return typeof projectId === 'string' && projectId.trim()
     ? projectId.trim()
     : null;
@@ -38,38 +49,70 @@ export function getPushAvailabilityReason(): PushAvailabilityReason {
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
     return 'unsupported-platform';
   }
-  if (getPushRuntimeEnvironment() === 'expo-go') {
-    return 'expo-go';
-  }
-  if (!Device.isDevice) {
-    return 'simulator';
-  }
-  if (!getEasProjectId()) {
-    return 'missing-project-id';
-  }
+  if (getPushRuntimeEnvironment() === 'expo-go') return 'expo-go';
+  if (!Device.isDevice) return 'simulator';
+  if (!getEasProjectId()) return 'missing-project-id';
   return 'available';
 }
 
-export async function createPushRegistrationPayload(
-  preferences: NotificationPreferences,
-): Promise<PushRegistrationPayload> {
+export function isExpoPushToken(value: unknown): value is string {
+  return typeof value === 'string' && EXPO_PUSH_TOKEN_PATTERN.test(value);
+}
+
+function getLocaleAndTimezone() {
+  try {
+    const options = Intl.DateTimeFormat().resolvedOptions();
+    return {
+      locale: options.locale || null,
+      timezone: options.timeZone || null,
+    };
+  } catch {
+    return { locale: null, timezone: null };
+  }
+}
+
+export async function getCurrentExpoPushToken(
+  devicePushToken?: Notifications.DevicePushToken,
+) {
   const projectId = getEasProjectId();
   const availability = getPushAvailabilityReason();
   if (!projectId || availability !== 'available') {
     throw new Error(`PUSH_NOT_AVAILABLE:${availability}`);
   }
-
-  const token = await Notifications.getExpoPushTokenAsync({ projectId });
-  const platform = Platform.OS;
-  if (platform !== 'android' && platform !== 'ios') {
-    throw new Error('PUSH_NOT_AVAILABLE:unsupported-platform');
+  const token = await Notifications.getExpoPushTokenAsync({
+    projectId,
+    ...(devicePushToken ? { devicePushToken } : {}),
+  });
+  if (!isExpoPushToken(token.data)) {
+    throw new Error('PUSH_TOKEN_INVALID');
   }
+  return token.data;
+}
 
-  return {
-    installationId: await getInstallationId(),
-    expoPushToken: token.data,
+export async function registerPushDevice(
+  preferences: NotificationPreferences,
+  followedEmissionSlugs: string[],
+  options: {
+    devicePushToken?: Notifications.DevicePushToken;
+    skipIfExpoToken?: string;
+  } = {},
+): Promise<PushRegistration | null> {
+  const environment = getPushRuntimeEnvironment();
+  const platform = Platform.OS;
+  if (
+    environment === 'expo-go' ||
+    (platform !== 'android' && platform !== 'ios')
+  ) {
+    throw new Error('PUSH_NOT_AVAILABLE');
+  }
+  const installation = await getOrCreateInstallationId();
+  const expoPushToken = await getCurrentExpoPushToken(options.devicePushToken);
+  if (expoPushToken === options.skipIfExpoToken) return null;
+  const payload: PushRegistrationPayload = {
+    installationId: installation.installationId,
+    expoPushToken,
     platform,
-    runtimeEnvironment: getPushRuntimeEnvironment(),
+    runtimeEnvironment: environment,
     appVersion: Constants.expoConfig?.version ?? null,
     device: {
       brand: Device.brand,
@@ -77,29 +120,42 @@ export async function createPushRegistrationPayload(
       osName: Device.osName,
       osVersion: Device.osVersion,
     },
-    preferences,
+    ...getLocaleAndTimezone(),
+    preferences: createPushPreferences(
+      preferences,
+      followedEmissionSlugs,
+    ),
   };
-}
-
-export async function registerPushInstallation(
-  preferences: NotificationPreferences,
-) {
-  const payload = await createPushRegistrationPayload(preferences);
   await apiPost<void>(PUSH_REGISTRATION_PATH, {
     body: payload,
     debugLabel: 'push-registration',
   });
+  await completeInstallationIdMigration();
   return payload;
 }
 
-export async function syncPushPreferences(
-  registration: PushRegistrationPayload,
-  preferences: NotificationPreferences,
+export async function updatePushPreferences(
+  registration: PushRegistration,
+  preferences: PushServerPreferences,
 ) {
-  const payload = { ...registration, preferences };
-  await apiPost<void>(PUSH_REGISTRATION_PATH, {
-    body: payload,
+  await apiPatch<void>(PUSH_PREFERENCES_PATH, {
+    body: {
+      installationId: registration.installationId,
+      expoPushToken: registration.expoPushToken,
+      preferences,
+    },
     debugLabel: 'push-preferences',
   });
-  return payload;
 }
+
+export async function unregisterPushDevice(registration: PushRegistration) {
+  await apiDelete<void>(PUSH_UNREGISTER_PATH, {
+    body: {
+      installationId: registration.installationId,
+      expoPushToken: registration.expoPushToken,
+    },
+    debugLabel: 'push-unregister',
+  });
+}
+
+export const addPushTokenListener = Notifications.addPushTokenListener;

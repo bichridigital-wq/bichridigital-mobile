@@ -5,3 +5,8 @@ export type NotificationPermissionStatus =
   | 'unavailable';
 
 export type NotificationTestFeedback = 'scheduled' | 'error' | null;
+
+export type NotificationPermissionSnapshot = {
+  status: NotificationPermissionStatus;
+  canAskAgain: boolean;
+};
