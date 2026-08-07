@@ -2,6 +2,8 @@ import {
   API_REQUEST_TIMEOUT_MS,
   BICHRIDIGITAL_API_URL,
 } from '@/config/api';
+import { buildApiUrl } from '@/utils/api-url';
+import { parseApiError } from '@/utils/api-error';
 
 export type ApiClientErrorKind = 'configuration' | 'network' | 'server';
 
@@ -10,6 +12,8 @@ export class ApiClientError extends Error {
     message: string,
     readonly kind: ApiClientErrorKind,
     readonly status: number | null = null,
+    readonly code: string | null = null,
+    readonly fields: string[] = [],
   ) {
     super(message);
     this.name = 'ApiClientError';
@@ -23,17 +27,15 @@ type ApiRequestOptions = {
   body?: unknown;
 };
 
-function buildApiUrl(path: string): string {
+function getApiUrl(path: string): string {
   if (!BICHRIDIGITAL_API_URL) {
     throw new ApiClientError(
       "L'URL de l'API Bichridigital n'est pas configurée.",
       'configuration',
     );
   }
-  const baseUrl = BICHRIDIGITAL_API_URL.replace(/\/+$/, '');
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   try {
-    const url = new URL(`${baseUrl}${normalizedPath}`);
+    const url = new URL(buildApiUrl(BICHRIDIGITAL_API_URL, path));
     if (url.protocol !== 'https:' && url.protocol !== 'http:') {
       throw new Error('unsupported protocol');
     }
@@ -51,7 +53,7 @@ async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const url = buildApiUrl(path);
+  const url = getApiUrl(path);
   const controller = new AbortController();
   const timeoutId = setTimeout(
     () => controller.abort(),
@@ -73,14 +75,24 @@ async function apiRequest<T>(
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: controller.signal,
     });
-    if (__DEV__ && options.debugLabel) {
-      console.info(`[${options.debugLabel}] HTTP ${response.status}`);
-    }
     if (!response.ok) {
+      const parsed = parseApiError(await response.json().catch(() => null));
+      if (__DEV__ && options.debugLabel) {
+        const code = parsed.code ? ` — ${parsed.code}` : '';
+        const fields = parsed.fields.length
+          ? ` — fields: ${parsed.fields.join(', ')}`
+          : '';
+        console.info(
+          `[${options.debugLabel}] HTTP ${response.status}${code}${fields}`,
+        );
+      }
       throw new ApiClientError(
-        `L'API Bichridigital a retourné une erreur (${response.status}).`,
+        parsed.message ??
+          `L'API Bichridigital a retourné une erreur (${response.status}).`,
         'server',
         response.status,
+        parsed.code,
+        parsed.fields,
       );
     }
     if (response.status === 204) return undefined as T;

@@ -42,15 +42,15 @@ export type PushRegistrationPayload = {
   expoPushToken: string;
   platform: 'android' | 'ios';
   runtimeEnvironment: Exclude<PushRuntimeEnvironment, 'expo-go'>;
-  appVersion: string | null;
+  appVersion?: string;
   device: {
-    brand: string | null;
-    modelName: string | null;
-    osName: string | null;
-    osVersion: string | null;
+    brand?: string;
+    modelName?: string;
+    osName?: string;
+    osVersion?: string;
   };
-  locale: string | null;
-  timezone: string | null;
+  locale?: string;
+  timezone?: string;
   preferences: PushServerPreferences;
 };
 

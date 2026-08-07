@@ -12,17 +12,20 @@ import type { NotificationPreferences } from '@/types/notification-preferences';
 import type {
   PushAvailabilityReason,
   PushRegistration,
-  PushRegistrationPayload,
   PushRuntimeEnvironment,
   PushServerPreferences,
 } from '@/types/push-notifications';
-import { createPushPreferences } from '@/utils/push-preferences';
+import {
+  createPushPreferences,
+  createPushRegistrationPayload,
+  getPushDeviceOsName,
+} from '@/utils/push-preferences';
 
 export { createPushPreferences } from '@/utils/push-preferences';
 
-export const PUSH_REGISTRATION_PATH = '/api/push/register';
-export const PUSH_PREFERENCES_PATH = '/api/push/preferences';
-export const PUSH_UNREGISTER_PATH = '/api/push/unregister';
+export const PUSH_REGISTRATION_PATH = '/push/register';
+export const PUSH_PREFERENCES_PATH = '/push/preferences';
+export const PUSH_UNREGISTER_PATH = '/push/unregister';
 
 const EXPO_PUSH_TOKEN_PATTERN = /^(Expo(nent)?PushToken)\[[^\]]+\]$/;
 
@@ -63,11 +66,11 @@ function getLocaleAndTimezone() {
   try {
     const options = Intl.DateTimeFormat().resolvedOptions();
     return {
-      locale: options.locale || null,
-      timezone: options.timeZone || null,
+      locale: options.locale || undefined,
+      timezone: options.timeZone || undefined,
     };
   } catch {
-    return { locale: null, timezone: null };
+    return { locale: undefined, timezone: undefined };
   }
 }
 
@@ -108,27 +111,25 @@ export async function registerPushDevice(
   const installation = await getOrCreateInstallationId();
   const expoPushToken = await getCurrentExpoPushToken(options.devicePushToken);
   if (expoPushToken === options.skipIfExpoToken) return null;
-  const payload: PushRegistrationPayload = {
+  const payload = createPushRegistrationPayload({
     installationId: installation.installationId,
     expoPushToken,
     platform,
     runtimeEnvironment: environment,
-    appVersion: Constants.expoConfig?.version ?? null,
+    appVersion: Constants.expoConfig?.version,
     device: {
       brand: Device.brand,
       modelName: Device.modelName,
-      osName: Device.osName,
+      osName: getPushDeviceOsName(platform),
       osVersion: Device.osVersion,
     },
     ...getLocaleAndTimezone(),
-    preferences: createPushPreferences(
-      preferences,
-      followedEmissionSlugs,
-    ),
-  };
+    preferences,
+    followedEmissionSlugs,
+  });
   await apiPost<void>(PUSH_REGISTRATION_PATH, {
     body: payload,
-    debugLabel: 'push-registration',
+    debugLabel: 'Push register',
   });
   await completeInstallationIdMigration();
   return payload;
@@ -144,7 +145,7 @@ export async function updatePushPreferences(
       expoPushToken: registration.expoPushToken,
       preferences,
     },
-    debugLabel: 'push-preferences',
+    debugLabel: 'API',
   });
 }
 
@@ -154,7 +155,7 @@ export async function unregisterPushDevice(registration: PushRegistration) {
       installationId: registration.installationId,
       expoPushToken: registration.expoPushToken,
     },
-    debugLabel: 'push-unregister',
+    debugLabel: 'API',
   });
 }
 

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import { parseApiError } from '../utils/api-error.ts';
+import { buildApiUrl } from '../utils/api-url.ts';
 import {
   isLegacyInstallationId,
   isUuidV4InstallationId,
@@ -11,12 +13,121 @@ import {
 import { getSafeNotificationDestination } from '../utils/push-navigation.ts';
 import {
   createPushPreferences,
+  createPushRegistrationPayload,
+  getPushDeviceOsName,
   serializePushPreferences,
   shouldSyncPushPreferences,
 } from '../utils/push-preferences.ts';
 
 const UUID = '123e4567-e89b-42d3-a456-426614174000';
 const UUID_2 = '223e4567-e89b-42d3-a456-426614174001';
+const API_BASE_URL = 'https://www.bichridigital.com/api';
+
+test('Push device OS names use stable lowercase server values', () => {
+  assert.equal(getPushDeviceOsName('android'), 'android');
+  assert.equal(getPushDeviceOsName('ios'), 'ios');
+  assert.notEqual(getPushDeviceOsName('android'), 'Android');
+  assert.notEqual(getPushDeviceOsName('ios'), 'iOS');
+});
+
+test('API URLs normalize the base and never duplicate the API prefix', () => {
+  assert.equal(
+    buildApiUrl(API_BASE_URL, '/push/register'),
+    'https://www.bichridigital.com/api/push/register',
+  );
+  assert.equal(
+    buildApiUrl(`${API_BASE_URL}/`, 'push/register'),
+    'https://www.bichridigital.com/api/push/register',
+  );
+  assert.equal(
+    buildApiUrl(API_BASE_URL, '/api/push/register'),
+    'https://www.bichridigital.com/api/push/register',
+  );
+  assert.doesNotMatch(
+    buildApiUrl(API_BASE_URL, '/api/push/register'),
+    /\/api\/api\//,
+  );
+  assert.equal(
+    buildApiUrl(API_BASE_URL, '/schedule/upcoming?fresh=123'),
+    'https://www.bichridigital.com/api/schedule/upcoming?fresh=123',
+  );
+  assert.equal(
+    buildApiUrl(API_BASE_URL, '/youtube/live'),
+    'https://www.bichridigital.com/api/youtube/live',
+  );
+});
+
+test('Push PATCH and DELETE routes use the normalized API endpoints', async () => {
+  const serviceSource = await readFile(
+    new URL('../services/push-registration.ts', import.meta.url),
+    'utf8',
+  );
+  assert.match(serviceSource, /PUSH_PREFERENCES_PATH = '\/push\/preferences'/);
+  assert.match(serviceSource, /PUSH_UNREGISTER_PATH = '\/push\/unregister'/);
+  assert.equal(
+    buildApiUrl(API_BASE_URL, '/push/preferences'),
+    'https://www.bichridigital.com/api/push/preferences',
+  );
+  assert.equal(
+    buildApiUrl(API_BASE_URL, '/push/unregister'),
+    'https://www.bichridigital.com/api/push/unregister',
+  );
+});
+
+test('Push registration payload matches the strict server contract', () => {
+  const payload = createPushRegistrationPayload({
+    installationId: UUID,
+    expoPushToken: '[masked]',
+    platform: 'android',
+    runtimeEnvironment: 'development-build',
+    appVersion: ' 1.0.0 ',
+    device: {
+      brand: ' Example ',
+      modelName: null,
+      osName: getPushDeviceOsName('android'),
+      osVersion: undefined,
+    },
+    locale: ' fr-FR ',
+    timezone: null,
+    preferences: {
+      notificationsEnabled: true,
+      notifyNewVideos: true,
+      notifyLiveStarts: false,
+      notifyFollowedEmissions: true,
+    },
+    followedEmissionSlugs: [' Journal-Soir ', 'journal-soir'],
+  });
+
+  assert.deepEqual(Object.keys(payload).sort(), [
+    'appVersion',
+    'device',
+    'expoPushToken',
+    'installationId',
+    'locale',
+    'platform',
+    'preferences',
+    'runtimeEnvironment',
+  ]);
+  assert.equal(payload.runtimeEnvironment, 'development-build');
+  assert.deepEqual(payload.device, { brand: 'Example', osName: 'android' });
+  assert.equal('timezone' in payload, false);
+  assert.deepEqual(payload.preferences.followedEmissionSlugs, ['journal-soir']);
+});
+
+test('structured API errors retain diagnostics without leaking identifiers', () => {
+  const parsed = parseApiError({
+    error: {
+      code: 'VALIDATION_ERROR',
+      message: `Environnement d’exécution invalide. ${UUID}`,
+      fields: [UUID, 'unknownField'],
+    },
+  });
+  const diagnostic = JSON.stringify(parsed);
+
+  assert.equal(parsed.code, 'VALIDATION_ERROR');
+  assert.deepEqual(parsed.fields, ['runtimeEnvironment']);
+  assert.doesNotMatch(diagnostic, new RegExp(UUID));
+});
 
 test('absence creates one canonical UUIDv4', () => {
   let calls = 0;
