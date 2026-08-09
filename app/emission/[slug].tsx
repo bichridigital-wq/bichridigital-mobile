@@ -18,16 +18,15 @@ import { EmissionEmptyState } from '@/components/emissions/emission-empty-state'
 import { EmissionEpisodeCard } from '@/components/emissions/emission-episode-card';
 import { EmissionErrorState } from '@/components/emissions/emission-error-state';
 import { EmissionHero } from '@/components/emissions/emission-hero';
-import {
-  getEmissionBySlug,
-  type EmissionItem,
-} from '@/constants/emissions-content';
 import { getPlaylistIdForEmission } from '@/constants/emission-playlists';
 import type { Replay } from '@/constants/replays-content';
 import { theme } from '@/constants/theme';
 import { useActionFeedbackAnimation } from '@/hooks/use-action-feedback-animation';
 import { usePlaylistVideos } from '@/hooks/use-youtube';
 import { useUserLibrary } from '@/hooks/use-user-library';
+import { useProgramCatalog } from '@/hooks/use-program-catalog';
+import { useNotifications } from '@/hooks/use-notifications';
+import type { EnrichedEmission } from '@/types/program';
 import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
 import { playAddHaptic, playRemoveHaptic } from '@/utils/haptics';
 
@@ -37,6 +36,7 @@ function readParam(value: string | string[] | undefined): string {
 
 export default function EmissionScreen() {
   const params = useLocalSearchParams<{ slug?: string | string[] }>();
+  const { getEmissionBySlug } = useProgramCatalog();
   const emission = getEmissionBySlug(readParam(params.slug).trim());
 
   if (!emission) {
@@ -56,7 +56,7 @@ function LinkedEmission({
   emission,
   playlistId,
 }: {
-  emission: EmissionItem;
+  emission: EnrichedEmission;
   playlistId: string;
 }) {
   const insets = useSafeAreaInsets();
@@ -135,7 +135,7 @@ function LinkedEmission({
   );
 }
 
-function UnlinkedEmission({ emission }: { emission: EmissionItem }) {
+function UnlinkedEmission({ emission }: { emission: EnrichedEmission }) {
   const insets = useSafeAreaInsets();
   const isXamNdiagne = emission.slug === 'xam-ndiagne-jotna';
   const message = isXamNdiagne
@@ -161,7 +161,7 @@ function EmissionPageFrame({
   topInset,
   bottomInset,
 }: {
-  emission: EmissionItem;
+  emission: EnrichedEmission;
   children: ReactNode;
   refreshControl?: ReactElement<RefreshControlProps>;
   hasVerifiedPlaylist: boolean;
@@ -209,12 +209,13 @@ function PageHeader() {
   );
 }
 
-function EmissionFollowControl({ emission }: { emission: EmissionItem }) {
+function EmissionFollowControl({ emission }: { emission: EnrichedEmission }) {
   const {
     isEmissionFollowed,
     isHydrated,
     toggleEmissionFollow,
   } = useUserLibrary();
+  const { programSubscriptionSyncStatus } = useNotifications();
   const { animate, animatedStyle } = useActionFeedbackAnimation();
   const isFollowed = isEmissionFollowed(emission.slug);
 
@@ -242,6 +243,7 @@ function EmissionFollowControl({ emission }: { emission: EmissionItem }) {
               title: emission.title,
               category: emission.category,
               coverColor: emission.coverColor,
+              programId: emission.programId,
             });
           }}
           style={({ pressed }) => [
@@ -268,6 +270,11 @@ function EmissionFollowControl({ emission }: { emission: EmissionItem }) {
         Le suivi permettra de recevoir les nouveautés de cette émission lorsque
         les notifications seront activées.
       </Text>
+      {programSubscriptionSyncStatus === 'pending' || programSubscriptionSyncStatus === 'syncing' ? (
+        <Text style={styles.followInfo}>Synchronisation en coursâ€¦</Text>
+      ) : programSubscriptionSyncStatus === 'network-error' || programSubscriptionSyncStatus === 'server-error' ? (
+        <Text style={styles.followInfo}>Suivi conservé sur cet appareil — synchronisation en attente.</Text>
+      ) : null}
     </View>
   );
 }

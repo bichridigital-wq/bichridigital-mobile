@@ -6,6 +6,7 @@ export type SafeNotificationDestination =
 
 const EMISSION_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const YOUTUBE_VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 export function getSafeNotificationDestination(
   data: Record<string, unknown>,
@@ -18,7 +19,10 @@ export function getSafeNotificationDestination(
   if (
     data.type === 'emission' &&
     typeof data.emissionSlug === 'string' &&
-    EMISSION_SLUG_PATTERN.test(data.emissionSlug)
+    EMISSION_SLUG_PATTERN.test(data.emissionSlug) &&
+    ((data.programId === undefined && data.scheduleId === undefined) ||
+      (typeof data.programId === 'string' && UUID_PATTERN.test(data.programId) &&
+        typeof data.scheduleId === 'string' && UUID_PATTERN.test(data.scheduleId)))
   ) {
     return { pathname: '/emission/[slug]', params: { slug: data.emissionSlug } };
   }

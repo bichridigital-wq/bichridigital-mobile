@@ -2,6 +2,7 @@ export type ScheduleEventStatus = 'scheduled';
 
 export type ScheduleEvent = {
   id: string;
+  programId?: string | null;
   title: string;
   slug?: string | null;
   description?: string | null;
@@ -21,6 +22,7 @@ export type ScheduleResponse = {
 
 export type ScheduleEventViewModel = {
   id: string;
+  programId: string | null;
   title: string;
   slug: string | null;
   description: string | null;

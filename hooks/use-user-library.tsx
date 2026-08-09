@@ -23,6 +23,11 @@ import type {
   RecentlyWatchedVideo,
   UserLibraryData,
 } from '@/types/user-library';
+import type { EnrichedEmission } from '@/types/program';
+import {
+  enrichFavoriteEmissions,
+  mergeFavoriteEmissionsByProgramIds,
+} from '@/utils/followed-emissions';
 
 const MAX_RECENTLY_WATCHED = 30;
 
@@ -40,6 +45,8 @@ type UserLibraryContextValue = {
   addRecentlyWatched: (video: LibraryVideoInput) => void;
   removeFavoriteVideo: (videoId: string) => void;
   removeFollowedEmission: (slug: string) => void;
+  enrichFollowedEmissionProgramIds: (catalog: EnrichedEmission[]) => void;
+  mergeFollowedProgramIds: (programIds: string[], catalog: EnrichedEmission[]) => void;
   clearRecentlyWatched: () => void;
   clearAllLibraryData: () => void;
   setNotificationsEnabled: (value: boolean) => void;
@@ -95,6 +102,7 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
       }
 
       const nextLibrary = update(libraryRef.current);
+      if (nextLibrary === libraryRef.current) return;
       libraryRef.current = nextLibrary;
       setLibrary(nextLibrary);
       writeQueueRef.current = writeQueueRef.current
@@ -179,6 +187,28 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
+  const enrichFollowedEmissionProgramIds = useCallback((catalog: EnrichedEmission[]) => {
+    commit((current) => {
+      const favoriteEmissions = enrichFavoriteEmissions(current.favoriteEmissions, catalog);
+      return favoriteEmissions === current.favoriteEmissions
+        ? current
+        : { ...current, favoriteEmissions };
+    });
+  }, [commit]);
+
+  const mergeFollowedProgramIds = useCallback((programIds: string[], catalog: EnrichedEmission[]) => {
+    commit((current) => {
+      const favoriteEmissions = mergeFavoriteEmissionsByProgramIds(
+        current.favoriteEmissions,
+        programIds,
+        catalog,
+      );
+      return favoriteEmissions === current.favoriteEmissions
+        ? current
+        : { ...current, favoriteEmissions };
+    });
+  }, [commit]);
+
   const addRecentlyWatched = useCallback(
     (video: LibraryVideoInput) => {
       if (!video.videoId.trim()) {
@@ -242,6 +272,8 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
       addRecentlyWatched,
       removeFavoriteVideo,
       removeFollowedEmission,
+      enrichFollowedEmissionProgramIds,
+      mergeFollowedProgramIds,
       clearRecentlyWatched,
       clearAllLibraryData,
       setNotificationsEnabled,
@@ -255,6 +287,8 @@ export function UserLibraryProvider({ children }: { children: ReactNode }) {
       isHydrated,
       library,
       removeFollowedEmission,
+      enrichFollowedEmissionProgramIds,
+      mergeFollowedProgramIds,
       removeFavoriteVideo,
       setNotificationsEnabled,
       setNotificationPreference,

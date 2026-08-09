@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { UserLibraryData } from '@/types/user-library';
+import { UUID_PATTERN } from '@/utils/followed-emissions';
 
 export const USER_LIBRARY_STORAGE_KEY = 'bichridigital:user-library:v1';
 export const USER_LIBRARY_VERSION = 1 as const;
+// Keep v1: programId is optional, so existing libraries remain readable without a risky rewrite.
 
 export function createEmptyUserLibrary(): UserLibraryData {
   return {
@@ -57,7 +59,13 @@ function readStoredLibrary(value: unknown): UserLibraryData | null {
       isString(emission.category) &&
       isString(emission.coverColor) &&
       isString(emission.savedAt),
-  );
+  ).map((emission) => ({
+    ...emission,
+    ...(emission.programId === null ||
+    (typeof emission.programId === 'string' && UUID_PATTERN.test(emission.programId))
+      ? { programId: emission.programId }
+      : {}),
+  }));
   const recentlyWatched = candidate.recentlyWatched
     .filter(
       (video) =>

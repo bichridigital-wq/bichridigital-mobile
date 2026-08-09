@@ -5,6 +5,7 @@ import type {
 } from '@/types/schedule';
 
 const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ISO_UTC_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -32,6 +33,7 @@ function adaptEvent(value: unknown): ScheduleEvent | null {
     typeof row.scheduledStartTime === 'string' ? row.scheduledStartTime : '';
   const startTime = new Date(scheduledStartTime).getTime();
   const slug = optionalString(row.slug);
+  const programId = optionalString(row.programId);
   const youtubeVideoId = optionalString(row.youtubeVideoId);
   const thumbnailUrl = optionalString(row.thumbnailUrl);
 
@@ -43,6 +45,8 @@ function adaptEvent(value: unknown): ScheduleEvent | null {
     !Number.isFinite(startTime) ||
     row.status !== 'scheduled' ||
     slug === undefined ||
+    programId === undefined ||
+    (programId !== null && !UUID_PATTERN.test(programId)) ||
     (slug !== null && !SLUG_PATTERN.test(slug)) ||
     youtubeVideoId === undefined ||
     (youtubeVideoId !== null && !VIDEO_ID_PATTERN.test(youtubeVideoId)) ||
@@ -70,6 +74,7 @@ function adaptEvent(value: unknown): ScheduleEvent | null {
 
   return {
     id,
+    programId,
     title,
     slug,
     description,
@@ -116,6 +121,7 @@ export function toScheduleViewModel(
 ): ScheduleEventViewModel {
   return {
     id: event.id,
+    programId: event.programId ?? null,
     title: event.title,
     slug: event.slug ?? null,
     description: event.description ?? null,

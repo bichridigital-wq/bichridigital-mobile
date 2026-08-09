@@ -8,13 +8,16 @@ import { EmissionCard } from '@/components/emissions/emission-card';
 import { EmptySearchState } from '@/components/emissions/empty-search-state';
 import { FeaturedShowCard } from '@/components/emissions/featured-show-card';
 import { ShowSearchBar } from '@/components/emissions/show-search-bar';
-import { categories, emissions, featuredEmission } from '@/constants/emissions-content';
+import { categories } from '@/constants/emissions-content';
 import { theme } from '@/constants/theme';
+import { useProgramCatalog } from '@/hooks/use-program-catalog';
 
 export default function EmissionsScreen() {
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('Toutes');
   const [query, setQuery] = useState('');
+  const { emissions } = useProgramCatalog();
+  const featuredEmission = emissions[0];
 
   const normalizedQuery = query.trim().toLowerCase();
   const openEmission = (slug: string) => {
@@ -27,7 +30,7 @@ export default function EmissionsScreen() {
       const matchesQuery = item.title.toLowerCase().includes(normalizedQuery);
       return matchesCategory && matchesQuery;
     });
-  }, [activeCategory, normalizedQuery]);
+  }, [activeCategory, emissions, normalizedQuery]);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
@@ -56,12 +59,12 @@ export default function EmissionsScreen() {
             ))}
           </ScrollView>
 
-          <FeaturedShowCard
+          {featuredEmission ? <FeaturedShowCard
             title={featuredEmission.title}
             category={featuredEmission.category}
             accent={featuredEmission.coverColor}
             onPress={() => openEmission(featuredEmission.slug)}
-          />
+          /> : null}
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Toutes les émissions</Text>
@@ -73,7 +76,7 @@ export default function EmissionsScreen() {
                     title={item.title}
                     category={item.category}
                     accent={item.coverColor}
-                    highlighted={item.id === featuredEmission.id}
+                    highlighted={item.id === featuredEmission?.id}
                     status={item.status}
                     onPress={() => openEmission(item.slug)}
                   />

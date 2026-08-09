@@ -22,6 +22,7 @@ export type LibraryEmissionInput = {
   title: string;
   category: string;
   coverColor: string;
+  programId?: string | null;
 };
 
 export type FavoriteEmission = LibraryEmissionInput & {

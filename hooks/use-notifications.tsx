@@ -12,6 +12,7 @@ import {
 import { AppState, Linking } from 'react-native';
 
 import { useUserLibrary } from '@/hooks/use-user-library';
+import { useProgramCatalog } from '@/hooks/use-program-catalog';
 import { ApiClientError } from '@/services/api-client';
 import {
   getOrCreateInstallationId,
@@ -39,6 +40,14 @@ import {
   unregisterPushDevice,
   updatePushPreferences,
 } from '@/services/push-registration';
+import {
+  followProgramSubscription,
+  hasCompletedProgramSubscriptionMigration,
+  listProgramSubscriptions,
+  markProgramSubscriptionMigrationComplete,
+  unfollowProgramSubscription,
+} from '@/services/program-subscriptions';
+import { reconcileProgramSubscriptions } from '@/utils/program-subscription-reconciliation';
 import type {
   NotificationPermissionStatus,
   NotificationTestFeedback,
@@ -75,6 +84,7 @@ type NotificationContextValue = {
   pushAvailabilityReason: PushAvailabilityReason;
   pushRegistrationStatus: PushRegistrationStatus;
   preferenceSyncStatus: PreferenceSyncStatus;
+  programSubscriptionSyncStatus: PreferenceSyncStatus;
   installationIdStatus: InstallationIdStatus | 'initializing' | 'error';
   installationIdKind: InstallationIdKind | null;
   hasEasProjectId: boolean;
@@ -112,8 +122,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     notificationsEnabled,
     notificationPreferences,
     followedEmissions,
+    enrichFollowedEmissionProgramIds,
+    mergeFollowedProgramIds,
     setNotificationsEnabled,
   } = useUserLibrary();
+  const { emissions: catalogEmissions, isLoaded: isCatalogLoaded, isOfflineFallback } = useProgramCatalog();
   const [permissionStatus, setPermissionStatus] =
     useState<NotificationPermissionStatus>('undetermined');
   const [canAskPermissionAgain, setCanAskPermissionAgain] = useState(true);
@@ -127,6 +140,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [pushRegistrationStatus, setPushRegistrationStatus] =
     useState<PushRegistrationStatus>('initializing');
   const [preferenceSyncStatus, setPreferenceSyncStatus] =
+    useState<PreferenceSyncStatus>('idle');
+  const [programSubscriptionSyncStatus, setProgramSubscriptionSyncStatus] =
     useState<PreferenceSyncStatus>('idle');
   const [pushRegistration, setPushRegistration] =
     useState<PushRegistration | null>(null);
@@ -142,6 +157,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const preferenceOperationRef = useRef<Promise<void> | null>(null);
   const unregisterOperationRef = useRef<Promise<boolean> | null>(null);
   const preferenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const programTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const programQueueRef = useRef(Promise.resolve());
   const handledResponsesRef = useRef(new Set<string>());
   const startupRegistrationAttemptedRef = useRef(false);
   const mountedRef = useRef(true);
@@ -151,6 +168,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const confirmedPreferencesRef = useRef<string | null>(null);
   const pushPreferences = useMemo(
     () =>
+      // Transitional compatibility: UUID subscriptions and legacy slugs share this local source.
       createPushPreferences(
         notificationPreferences,
         followedEmissions.map((emission) => emission.slug),
@@ -158,6 +176,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     [followedEmissions, notificationPreferences],
   );
   const pushPreferencesRef = useRef(pushPreferences);
+  const followedEmissionsRef = useRef(followedEmissions);
+  const catalogEmissionsRef = useRef(catalogEmissions);
   const pushRuntimeEnvironment = getPushRuntimeEnvironment();
   const pushAvailabilityReason = getPushAvailabilityReason();
   const hasEasProjectId = getEasProjectId() !== null;
@@ -167,7 +187,59 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     permissionStatusRef.current = permissionStatus;
     notificationsEnabledRef.current = notificationsEnabled;
     pushPreferencesRef.current = pushPreferences;
-  }, [notificationsEnabled, permissionStatus, pushPreferences, pushRegistration]);
+    followedEmissionsRef.current = followedEmissions;
+    catalogEmissionsRef.current = catalogEmissions;
+  }, [
+    catalogEmissions,
+    followedEmissions,
+    notificationsEnabled,
+    permissionStatus,
+    pushPreferences,
+    pushRegistration,
+  ]);
+
+  useEffect(() => {
+    if (isHydrated && isCatalogLoaded && !isOfflineFallback) {
+      enrichFollowedEmissionProgramIds(catalogEmissions);
+    }
+  }, [catalogEmissions, enrichFollowedEmissionProgramIds, isCatalogLoaded, isHydrated, isOfflineFallback]);
+
+  const performProgramSubscriptionSync = useCallback(() => {
+    const registration = registrationRef.current;
+    if (!registration || !isCatalogLoaded || isOfflineFallback) return Promise.resolve();
+    setProgramSubscriptionSyncStatus('syncing');
+    programQueueRef.current = programQueueRef.current.catch(() => undefined).then(async () => {
+      const serverIds = await listProgramSubscriptions(registration);
+      const migrationComplete = await hasCompletedProgramSubscriptionMigration();
+      const catalog = catalogEmissionsRef.current;
+      const localIds = followedEmissionsRef.current
+        .map((item) => item.programId)
+        .filter((id): id is string => Boolean(id));
+      const manageableIds = catalog.map((item) => item.programId).filter((id): id is string => Boolean(id));
+      const plan = reconcileProgramSubscriptions(localIds, serverIds, manageableIds, migrationComplete);
+      if (!migrationComplete) mergeFollowedProgramIds(plan.mergedProgramIds, catalog);
+      for (const id of plan.followProgramIds) await followProgramSubscription(registration, id);
+      for (const id of plan.unfollowProgramIds) await unfollowProgramSubscription(registration, id);
+      await markProgramSubscriptionMigrationComplete();
+      if (mountedRef.current) setProgramSubscriptionSyncStatus('synced');
+    }).catch((error) => {
+      if (mountedRef.current) setProgramSubscriptionSyncStatus(getFailureStatus(error));
+    });
+    return programQueueRef.current;
+  }, [isCatalogLoaded, isOfflineFallback, mergeFollowedProgramIds]);
+
+  useEffect(() => {
+    if (!pushRegistration || !isCatalogLoaded || isOfflineFallback) return;
+    setProgramSubscriptionSyncStatus('pending');
+    if (programTimerRef.current) clearTimeout(programTimerRef.current);
+    programTimerRef.current = setTimeout(() => {
+      programTimerRef.current = null;
+      void performProgramSubscriptionSync();
+    }, PREFERENCE_SYNC_DEBOUNCE_MS);
+    return () => {
+      if (programTimerRef.current) clearTimeout(programTimerRef.current);
+    };
+  }, [followedEmissions, isCatalogLoaded, isOfflineFallback, performProgramSubscriptionSync, pushRegistration]);
 
   const refreshPermissionStatus = useCallback(() => {
     if (refreshRef.current) return refreshRef.current;
@@ -567,6 +639,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       pushAvailabilityReason,
       pushRegistrationStatus,
       preferenceSyncStatus,
+      programSubscriptionSyncStatus,
       installationIdStatus,
       installationIdKind: installation?.kind ?? null,
       hasEasProjectId,
@@ -600,6 +673,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       performPreferenceSync,
       permissionStatus,
       preferenceSyncStatus,
+      programSubscriptionSyncStatus,
       pushAvailabilityReason,
       pushError,
       pushRegistration,
