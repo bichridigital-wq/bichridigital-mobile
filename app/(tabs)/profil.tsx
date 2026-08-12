@@ -23,6 +23,7 @@ import { NotificationDetailPreferences } from '@/components/profile/notification
 import { ProfileEmptyState } from '@/components/profile/profile-empty-state';
 import { ProfileSectionHeader } from '@/components/profile/profile-section-header';
 import { ProfileSummary } from '@/components/profile/profile-summary';
+import { AccountCard } from '@/components/profile/account-card';
 import { RecentVideoRow } from '@/components/profile/recent-video-row';
 import { usefulLinks } from '@/constants/more-content';
 import { theme } from '@/constants/theme';
@@ -219,6 +220,7 @@ export default function ProfileScreen() {
           <ProfileLoadingState />
         ) : (
           <View style={styles.content}>
+            <AccountCard />
             {storageError ? (
               <Text accessibilityRole="alert" style={styles.storageError}>
                 Certaines données locales n’ont pas pu être enregistrées.

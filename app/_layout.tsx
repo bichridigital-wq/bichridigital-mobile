@@ -8,6 +8,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { NotificationProvider } from '@/hooks/use-notifications';
 import { ProgramCatalogProvider } from '@/hooks/use-program-catalog';
 import { UserLibraryProvider } from '@/hooks/use-user-library';
+import { AuthProvider } from '@/hooks/use-auth';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -19,18 +20,21 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ProgramCatalogProvider>
-        <UserLibraryProvider>
+        <AuthProvider>
+          <UserLibraryProvider>
           <NotificationProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="video/[videoId]" options={{ headerShown: false }} />
               <Stack.Screen name="emission/[slug]" options={{ headerShown: false }} />
+              <Stack.Screen name="auth" options={{ headerShown: false }} />
             </Stack>
             <StatusBar style="light" />
           </ThemeProvider>
           </NotificationProvider>
-        </UserLibraryProvider>
+          </UserLibraryProvider>
+        </AuthProvider>
       </ProgramCatalogProvider>
     </SafeAreaProvider>
   );
