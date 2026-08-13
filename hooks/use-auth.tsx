@@ -6,6 +6,7 @@ import { AUTH_REDIRECT_URLS } from '@/lib/auth-redirects';
 import { getMe, updateDisplayName } from '@/services/account';
 import { authStorage, PENDING_DISPLAY_NAME_KEY } from '@/services/auth-storage';
 import type { AccountProfile } from '@/types/account';
+import { unlinkAccountDeviceBeforeSignOut } from '@/services/account-device-link';
 
 type Value = {
   user: User | null; session: Session | null; profile: AccountProfile | null;
@@ -75,9 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { confirmationRequired: !data.session };
   }, [loadProfile]);
   const signOut = useCallback(async () => {
-    if (!supabase) return; const { error } = await supabase.auth.signOut(); if (error) throw error;
+    if (!supabase) return;
+    if (session?.access_token) await unlinkAccountDeviceBeforeSignOut(session.access_token);
+    const { error } = await supabase.auth.signOut(); if (error) throw error;
     await authStorage.removeItem(PENDING_DISPLAY_NAME_KEY); setSession(null); setProfile(null);
-  }, []);
+  }, [session]);
   const sendPasswordReset = useCallback(async (email: string) => {
     if (!supabase) throw new Error('AUTH_NOT_CONFIGURED');
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: AUTH_REDIRECT_URLS.passwordRecovery }); if (error) throw error;

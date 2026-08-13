@@ -26,6 +26,7 @@ import { usePlaylistVideos } from '@/hooks/use-youtube';
 import { useUserLibrary } from '@/hooks/use-user-library';
 import { useProgramCatalog } from '@/hooks/use-program-catalog';
 import { useNotifications } from '@/hooks/use-notifications';
+import { useAccountProgramSync } from '@/hooks/use-account-program-sync';
 import type { EnrichedEmission } from '@/types/program';
 import { adaptYoutubeVideo } from '@/utils/replay-video-adapter';
 import { playAddHaptic, playRemoveHaptic } from '@/utils/haptics';
@@ -213,8 +214,8 @@ function EmissionFollowControl({ emission }: { emission: EnrichedEmission }) {
   const {
     isEmissionFollowed,
     isHydrated,
-    toggleEmissionFollow,
   } = useUserLibrary();
+  const { toggleEmissionFollow } = useAccountProgramSync();
   const { programSubscriptionSyncStatus } = useNotifications();
   const { animate, animatedStyle } = useActionFeedbackAnimation();
   const isFollowed = isEmissionFollowed(emission.slug);

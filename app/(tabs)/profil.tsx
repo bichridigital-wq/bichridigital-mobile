@@ -29,6 +29,7 @@ import { usefulLinks } from '@/constants/more-content';
 import { theme } from '@/constants/theme';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useUserLibrary } from '@/hooks/use-user-library';
+import { useAccountProgramSync } from '@/hooks/use-account-program-sync';
 import type {
   FavoriteVideo,
   RecentlyWatchedVideo,
@@ -51,12 +52,12 @@ export default function ProfileScreen() {
     followedEmissions,
     recentlyWatched,
     removeFavoriteVideo,
-    removeFollowedEmission,
     clearRecentlyWatched,
     clearAllLibraryData,
     notificationPreferences,
     setNotificationPreference,
   } = useUserLibrary();
+  const { removeFollowedEmission } = useAccountProgramSync();
   const {
     permissionStatus,
     notificationsEnabled,

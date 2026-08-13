@@ -9,6 +9,7 @@ import { NotificationProvider } from '@/hooks/use-notifications';
 import { ProgramCatalogProvider } from '@/hooks/use-program-catalog';
 import { UserLibraryProvider } from '@/hooks/use-user-library';
 import { AuthProvider } from '@/hooks/use-auth';
+import { AccountProgramSyncProvider } from '@/hooks/use-account-program-sync';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -23,6 +24,7 @@ export default function RootLayout() {
         <AuthProvider>
           <UserLibraryProvider>
           <NotificationProvider>
+          <AccountProgramSyncProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -32,6 +34,7 @@ export default function RootLayout() {
             </Stack>
             <StatusBar style="light" />
           </ThemeProvider>
+          </AccountProgramSyncProvider>
           </NotificationProvider>
           </UserLibraryProvider>
         </AuthProvider>

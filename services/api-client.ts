@@ -49,7 +49,7 @@ function getApiUrl(path: string): string {
 }
 
 async function apiRequest<T>(
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
@@ -126,6 +126,8 @@ export const apiGet = <T>(path: string, options: ApiRequestOptions = {}) =>
   apiRequest<T>('GET', path, options);
 export const apiPost = <T>(path: string, options: ApiRequestOptions) =>
   apiRequest<T>('POST', path, options);
+export const apiPut = <T>(path: string, options: ApiRequestOptions) =>
+  apiRequest<T>('PUT', path, options);
 export const apiPatch = <T>(path: string, options: ApiRequestOptions) =>
   apiRequest<T>('PATCH', path, options);
 export const apiDelete = <T>(path: string, options: ApiRequestOptions) =>

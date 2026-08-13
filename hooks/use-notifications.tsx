@@ -12,6 +12,7 @@ import {
 import { AppState, Linking } from 'react-native';
 
 import { useUserLibrary } from '@/hooks/use-user-library';
+import { useAuth } from '@/hooks/use-auth';
 import { useProgramCatalog } from '@/hooks/use-program-catalog';
 import { ApiClientError } from '@/services/api-client';
 import {
@@ -90,6 +91,7 @@ type NotificationContextValue = {
   hasEasProjectId: boolean;
   installationId: string | null;
   hasExpoPushToken: boolean;
+  getExistingDeviceProof: () => { installationId: string; expoPushToken: string } | null;
   isPushRegistered: boolean;
   isPushOperationPending: boolean;
   enableNotifications: () => Promise<NotificationPermissionStatus>;
@@ -117,6 +119,7 @@ function getSafePushError(error: unknown) {
 }
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth();
   const {
     isHydrated,
     notificationsEnabled,
@@ -205,6 +208,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [catalogEmissions, enrichFollowedEmissionProgramIds, isCatalogLoaded, isHydrated, isOfflineFallback]);
 
   const performProgramSubscriptionSync = useCallback(() => {
+    if (isAuthenticated) return Promise.resolve();
     const registration = registrationRef.current;
     if (!registration || !isCatalogLoaded || isOfflineFallback) return Promise.resolve();
     setProgramSubscriptionSyncStatus('syncing');
@@ -226,10 +230,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (mountedRef.current) setProgramSubscriptionSyncStatus(getFailureStatus(error));
     });
     return programQueueRef.current;
-  }, [isCatalogLoaded, isOfflineFallback, mergeFollowedProgramIds]);
+  }, [isAuthenticated, isCatalogLoaded, isOfflineFallback, mergeFollowedProgramIds]);
 
   useEffect(() => {
-    if (!pushRegistration || !isCatalogLoaded || isOfflineFallback) return;
+    if (isAuthenticated || !pushRegistration || !isCatalogLoaded || isOfflineFallback) return;
     setProgramSubscriptionSyncStatus('pending');
     if (programTimerRef.current) clearTimeout(programTimerRef.current);
     programTimerRef.current = setTimeout(() => {
@@ -239,7 +243,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => {
       if (programTimerRef.current) clearTimeout(programTimerRef.current);
     };
-  }, [followedEmissions, isCatalogLoaded, isOfflineFallback, performProgramSubscriptionSync, pushRegistration]);
+  }, [followedEmissions, isAuthenticated, isCatalogLoaded, isOfflineFallback, performProgramSubscriptionSync, pushRegistration]);
 
   const refreshPermissionStatus = useCallback(() => {
     if (refreshRef.current) return refreshRef.current;
@@ -645,6 +649,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       hasEasProjectId,
       installationId: installation?.installationId ?? null,
       hasExpoPushToken: Boolean(pushRegistration?.expoPushToken),
+      getExistingDeviceProof: () => registrationRef.current
+        ? { installationId: registrationRef.current.installationId, expoPushToken: registrationRef.current.expoPushToken }
+        : null,
       isPushRegistered: Boolean(pushRegistration),
       isPushOperationPending,
       enableNotifications: enablePushNotifications,
