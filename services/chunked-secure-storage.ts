@@ -14,9 +14,37 @@ type ChunkManifest = {
 // This is not intended to describe a universal SecureStore platform limit.
 export const AUTH_STORAGE_CHUNK_BYTES = 1000;
 
-const manifestKey = (key: string) => `${key}:chunk-manifest`;
-const chunkKey = (key: string, generation: string, index: number) =>
-  `${key}:chunk:${generation}:${index}`;
+export const SECURE_STORE_KEY_PATTERN = /^[A-Za-z0-9._-]+$/;
+
+export function isValidSecureStoreKey(key: string): boolean {
+  return SECURE_STORE_KEY_PATTERN.test(key);
+}
+
+function assertValidSecureStoreKey(key: string): string {
+  if (!isValidSecureStoreKey(key)) {
+    throw new Error('Generated an invalid SecureStore key.');
+  }
+  return key;
+}
+
+function encodeUnsafeBaseKey(key: string): string {
+  const bytes = new TextEncoder().encode(key);
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `encoded.v1.${bytes.byteLength.toString(36)}.${hex}`;
+}
+
+function secureBaseKey(key: string): string {
+  return assertValidSecureStoreKey(
+    isValidSecureStoreKey(key) ? key : encodeUnsafeBaseKey(key),
+  );
+}
+
+const manifestKey = (baseKey: string) =>
+  assertValidSecureStoreKey(`${baseKey}.manifest`);
+const chunkKey = (baseKey: string, generation: string, index: number) =>
+  assertValidSecureStoreKey(
+    `${baseKey}.generation.${assertValidSecureStoreKey(generation)}.chunk.${index}`,
+  );
 
 function parseManifest(value: string | null): ChunkManifest | null {
   if (!value) return null;
@@ -26,7 +54,7 @@ function parseManifest(value: string | null): ChunkManifest | null {
     if (
       parsed.version === 1 &&
       typeof parsed.generation === 'string' &&
-      parsed.generation.length > 0 &&
+      isValidSecureStoreKey(parsed.generation) &&
       Number.isSafeInteger(parsed.chunks) &&
       Number(parsed.chunks) > 0
     ) {
@@ -64,13 +92,13 @@ function splitUtf8(value: string): string[] {
 
 async function deleteChunks(
   store: SecureKeyValueStore,
-  key: string,
+  baseKey: string,
   manifest: ChunkManifest | null,
 ) {
   if (!manifest) return;
   await Promise.all(
     Array.from({ length: manifest.chunks }, (_, index) =>
-      store.deleteItemAsync(chunkKey(key, manifest.generation, index)),
+      store.deleteItemAsync(chunkKey(baseKey, manifest.generation, index)),
     ),
   );
 }
@@ -82,12 +110,13 @@ export function createChunkedSecureStorage(
 ) {
   return {
     async getItem(key: string): Promise<string | null> {
-      const manifest = parseManifest(await store.getItemAsync(manifestKey(key)));
-      if (!manifest) return store.getItemAsync(key);
+      const baseKey = secureBaseKey(key);
+      const manifest = parseManifest(await store.getItemAsync(manifestKey(baseKey)));
+      if (!manifest) return store.getItemAsync(baseKey);
 
       const chunks = await Promise.all(
         Array.from({ length: manifest.chunks }, (_, index) =>
-          store.getItemAsync(chunkKey(key, manifest.generation, index)),
+          store.getItemAsync(chunkKey(baseKey, manifest.generation, index)),
         ),
       );
       if (chunks.some((chunk) => chunk === null)) {
@@ -97,8 +126,9 @@ export function createChunkedSecureStorage(
     },
 
     async setItem(key: string, value: string): Promise<void> {
-      const oldManifest = parseManifest(await store.getItemAsync(manifestKey(key)));
-      const generation = createGeneration();
+      const baseKey = secureBaseKey(key);
+      const oldManifest = parseManifest(await store.getItemAsync(manifestKey(baseKey)));
+      const generation = assertValidSecureStoreKey(createGeneration());
       const chunks = splitUtf8(value);
       const newManifest: ChunkManifest = {
         version: 1,
@@ -109,25 +139,26 @@ export function createChunkedSecureStorage(
       try {
         await Promise.all(
           chunks.map((chunk, index) =>
-            store.setItemAsync(chunkKey(key, generation, index), chunk),
+            store.setItemAsync(chunkKey(baseKey, generation, index), chunk),
           ),
         );
-        await store.setItemAsync(manifestKey(key), JSON.stringify(newManifest));
+        await store.setItemAsync(manifestKey(baseKey), JSON.stringify(newManifest));
       } catch (error) {
-        await deleteChunks(store, key, newManifest).catch(() => undefined);
+        await deleteChunks(store, baseKey, newManifest).catch(() => undefined);
         throw error;
       }
 
-      await store.deleteItemAsync(key);
-      await deleteChunks(store, key, oldManifest);
+      await store.deleteItemAsync(baseKey);
+      await deleteChunks(store, baseKey, oldManifest);
     },
 
     async removeItem(key: string): Promise<void> {
-      const manifest = parseManifest(await store.getItemAsync(manifestKey(key)));
-      await deleteChunks(store, key, manifest);
+      const baseKey = secureBaseKey(key);
+      const manifest = parseManifest(await store.getItemAsync(manifestKey(baseKey)));
+      await deleteChunks(store, baseKey, manifest);
       await Promise.all([
-        store.deleteItemAsync(manifestKey(key)),
-        store.deleteItemAsync(key),
+        store.deleteItemAsync(manifestKey(baseKey)),
+        store.deleteItemAsync(baseKey),
       ]);
     },
   };
