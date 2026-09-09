@@ -1,8 +1,11 @@
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { getEmissionCoverSource } from '@/constants/emission-covers';
 import { theme } from '@/constants/theme';
 
 type EmissionCardProps = {
+  slug: string;
   title: string;
   category: string;
   accent: string;
@@ -11,7 +14,8 @@ type EmissionCardProps = {
   onPress: () => void;
 };
 
-export function EmissionCard({ title, category, accent, highlighted = false, status, onPress }: EmissionCardProps) {
+export function EmissionCard({ slug, title, category, accent, highlighted = false, status, onPress }: EmissionCardProps) {
+  const coverSource = getEmissionCoverSource(slug);
   const isUpcoming = status?.toLowerCase().includes('bientôt');
 
   return (
@@ -25,7 +29,17 @@ export function EmissionCard({ title, category, accent, highlighted = false, sta
         { borderColor: accent },
         pressed && styles.pressed,
       ]}>
-      <View style={[styles.dot, { backgroundColor: accent }]} />
+      {coverSource !== undefined ? (
+        <Image
+          accessible={false}
+          contentFit="cover"
+          source={coverSource}
+          style={styles.cover}
+          transition={180}
+        />
+      ) : (
+        <View style={[styles.dot, { backgroundColor: accent }]} />
+      )}
       <View style={styles.content}>
         <View style={styles.row}>
           <Text style={styles.title} numberOfLines={1}>
@@ -57,6 +71,12 @@ const styles = StyleSheet.create({
   },
   highlightedCard: {
     backgroundColor: 'rgba(0,36,255,0.16)',
+  },
+  cover: {
+    width: '28%',
+    maxWidth: 120,
+    aspectRatio: 16 / 9,
+    borderRadius: 10,
   },
   dot: {
     width: 10,

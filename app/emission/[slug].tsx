@@ -272,7 +272,7 @@ function EmissionFollowControl({ emission }: { emission: EnrichedEmission }) {
         les notifications seront activées.
       </Text>
       {programSubscriptionSyncStatus === 'pending' || programSubscriptionSyncStatus === 'syncing' ? (
-        <Text style={styles.followInfo}>Synchronisation en coursâ€¦</Text>
+        <Text style={styles.followInfo}>Synchronisation en cours…</Text>
       ) : programSubscriptionSyncStatus === 'network-error' || programSubscriptionSyncStatus === 'server-error' ? (
         <Text style={styles.followInfo}>Suivi conservé sur cet appareil — synchronisation en attente.</Text>
       ) : null}

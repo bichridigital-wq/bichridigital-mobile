@@ -1,15 +1,19 @@
+import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { getEmissionCoverSource } from '@/constants/emission-covers';
 import { theme } from '@/constants/theme';
 
 type FeaturedShowCardProps = {
+  slug: string;
   title: string;
   category: string;
   accent: string;
   onPress: () => void;
 };
 
-export function FeaturedShowCard({ title, category, accent, onPress }: FeaturedShowCardProps) {
+export function FeaturedShowCard({ slug, title, category, accent, onPress }: FeaturedShowCardProps) {
+  const coverSource = getEmissionCoverSource(slug);
   return (
     <Pressable
       accessibilityRole="button"
@@ -20,6 +24,15 @@ export function FeaturedShowCard({ title, category, accent, onPress }: FeaturedS
         { borderColor: accent },
         pressed && styles.pressed,
       ]}>
+      {coverSource !== undefined ? (
+        <Image
+          accessible={false}
+          contentFit="cover"
+          source={coverSource}
+          style={styles.cover}
+          transition={180}
+        />
+      ) : null}
       <Text style={styles.label}>À la une</Text>
       <Text style={styles.title} numberOfLines={2}>
         {title}
@@ -40,6 +53,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     gap: 8,
+  },
+  cover: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
   },
   label: {
     color: theme.colors.yellow,

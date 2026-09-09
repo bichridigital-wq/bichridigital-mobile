@@ -60,6 +60,7 @@ export default function EmissionsScreen() {
           </ScrollView>
 
           {featuredEmission ? <FeaturedShowCard
+            slug={featuredEmission.slug}
             title={featuredEmission.title}
             category={featuredEmission.category}
             accent={featuredEmission.coverColor}
@@ -72,6 +73,7 @@ export default function EmissionsScreen() {
               <View style={styles.list}>
                 {filteredEmissions.map((item) => (
                   <EmissionCard
+                    slug={item.slug}
                     key={item.id}
                     title={item.title}
                     category={item.category}

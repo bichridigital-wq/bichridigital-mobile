@@ -1,6 +1,8 @@
+import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { RemoteThumbnail } from '@/components/home/remote-thumbnail';
+import { getEmissionCoverSource } from '@/constants/emission-covers';
 import {
   getEmissionStatusLabel,
   type EmissionItem,
@@ -19,13 +21,23 @@ export function EmissionHero({
     emission.status,
     hasVerifiedPlaylist,
   );
-
+  const coverSource = getEmissionCoverSource(emission.slug);
   return (
     <View style={styles.card}>
-      <RemoteThumbnail
-        fallbackColor={emission.coverColor}
-        style={styles.banner}
-      />
+      {coverSource !== undefined ? (
+        <Image
+          accessible={false}
+          contentFit="cover"
+          source={coverSource}
+          style={styles.banner}
+          transition={180}
+        />
+      ) : (
+        <RemoteThumbnail
+          fallbackColor={emission.coverColor}
+          style={styles.banner}
+        />
+      )}
       <View style={styles.content}>
         <View style={styles.metaRow}>
           <Text style={styles.category}>{emission.category}</Text>
