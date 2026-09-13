@@ -116,7 +116,7 @@ export function getSafeNotificationResponseDestination(
   response: Notifications.NotificationResponse,
 ) {
   return getSafeNotificationDestination(
-    response.notification.request.content.data,
+    response.notification.request.content.data ?? {},
   );
 }
 

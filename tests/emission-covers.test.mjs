@@ -33,6 +33,8 @@ test('all nine catalogue slugs resolve to their corresponding local image assets
     'xam-ndiagne-jotna': 'xam-ndiagne-jotna.png',
     'ettu-sport': 'ettu-sport.png',
     'gattandu-magal': 'gattandu-maggal.png',
+    'demb-ak-tay': 'demb-ak-tay.png',
+'apres-ndogou': 'apres-ndogou.png',
   };
   const assetIds = new Map();
   const getCover = loadHelper((path) => {
@@ -60,7 +62,7 @@ test('all nine catalogue slugs resolve to their corresponding local image assets
 
 test('uncovered and unknown slugs keep the fallback, including object keys', () => {
   const getCover = loadHelper(() => 42);
-  for (const slug of ['apres-ndogou', 'unknown', '', 'constructor', '__proto__']) {
+ for (const slug of ['unknown', '', 'constructor', '__proto__']) {
     assert.equal(getCover(slug), undefined);
   }
 });
