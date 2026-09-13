@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
@@ -15,7 +15,7 @@ const labels = {
 } as const;
 
 export function LiveStatusBadge({ status }: LiveStatusBadgeProps) {
-  const opacity = useRef(new Animated.Value(1)).current;
+  const [opacity] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     if (status !== 'live') {

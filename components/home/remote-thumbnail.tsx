@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -18,19 +18,17 @@ export function RemoteThumbnail({
   fallbackColor,
   style,
 }: RemoteThumbnailProps) {
-  const [failed, setFailed] = useState(false);
+  const [failedUri, setFailedUri] = useState<string | undefined>();
 
-  useEffect(() => {
-    setFailed(false);
-  }, [uri]);
+  const hasFailed = Boolean(uri && failedUri === uri);
 
   return (
     <View style={[styles.container, { backgroundColor: fallbackColor }, style]}>
-      {uri && !failed ? (
+      {uri && !hasFailed ? (
         <Image
           accessible={false}
           contentFit="cover"
-          onError={() => setFailed(true)}
+          onError={() => setFailedUri(uri)}
           source={uri}
           style={StyleSheet.absoluteFill}
           transition={180}

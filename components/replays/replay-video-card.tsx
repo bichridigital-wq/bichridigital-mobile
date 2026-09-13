@@ -76,11 +76,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   thumbnailShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(2,11,46,0.22)',
   },
   thumbnailImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   playIcon: {
     width: 36,

@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(2,11,46,0.56)',
   },
   content: {

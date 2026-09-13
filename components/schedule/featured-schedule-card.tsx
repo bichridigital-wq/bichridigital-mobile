@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -32,11 +33,19 @@ export function FeaturedScheduleCard({
   hasReliableAction,
   onOpen,
   onRefreshLive,
-}: Props) {
-  const recentlyEnded =
+}: Props) {  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+    const recentlyEnded =
     event.hasStarted &&
     event.scheduledEndTime !== null &&
-    new Date(event.scheduledEndTime).getTime() < Date.now();
+    new Date(event.scheduledEndTime).getTime() < now;
   const timingLabel = recentlyEnded
     ? 'Événement récemment programmé'
     : countdownLabel(countdown);

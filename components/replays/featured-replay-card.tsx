@@ -83,11 +83,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   coverShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(2,11,46,0.28)',
   },
   coverImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill
   },
   badge: {
     position: 'absolute',
