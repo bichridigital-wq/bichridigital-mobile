@@ -396,8 +396,17 @@ export default function ProfileScreen() {
             <View style={styles.section}>
               <ProfileSectionHeader title="Informations légales" />
               <View style={styles.list}>
-                <LegalLinkRow title="Mentions légales" />
-                <LegalLinkRow title="Politique de confidentialité" />
+                <LegalLinkRow
+  title="Mentions légales"
+  url="https://www.bichridigital.com/mentions-legales"
+  onOpen={openExternalUrl}
+/>
+
+<LegalLinkRow
+  title="Politique de confidentialité"
+  url="https://www.bichridigital.com/politique-confidentialite"
+  onOpen={openExternalUrl}
+/>
               </View>
             </View>
 

@@ -36,11 +36,31 @@ export const usefulLinks = [
 ] as const;
 
 export const socialLinks = [
-  { id: 'facebook', name: 'Facebook', url: '' },
-  { id: 'instagram', name: 'Instagram', url: '' },
-  { id: 'tiktok', name: 'TikTok', url: '' },
-  { id: 'youtube', name: 'YouTube', url: 'https://www.youtube.com/@bichridigital' },
-  { id: 'x', name: 'X', url: '' },
-  { id: 'snapchat', name: 'Snapchat', url: '' },
-  { id: 'linkedin', name: 'LinkedIn', url: '' },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    url: 'https://www.facebook.com/bichriartprod18Safar',
+  },
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    url: 'https://www.instagram.com/bichridigitalagency',
+  },
+  {
+    id: 'tiktok',
+    name: 'TikTok',
+    url: 'https://www.tiktok.com/@bichridigitalagency',
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    url: 'https://www.youtube.com/@bichridigital',
+  },
+  {
+    id: 'x',
+    name: 'X',
+    url: 'https://x.com/bichriartprod',
+  },
+ { id: 'snapchat', name: 'Snapchat', url: 'https://snapchat.com/t/JxJu2bvz' },
+{ id: 'linkedin', name: 'LinkedIn', url: 'https://www.linkedin.com/in/bounama-mouride-niang-19696421b' },
 ] as const;

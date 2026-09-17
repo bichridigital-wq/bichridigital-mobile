@@ -27,6 +27,7 @@ export default function RootLayout() {
           <AccountProgramSyncProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack>
+              <Stack.Screen name="intro" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="video/[videoId]" options={{ headerShown: false }} />
               <Stack.Screen name="emission/[slug]" options={{ headerShown: false }} />

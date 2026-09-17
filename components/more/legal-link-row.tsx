@@ -5,22 +5,41 @@ import { theme } from '@/constants/theme';
 
 type LegalLinkRowProps = {
   title: string;
+  url: string;
+  onOpen: (url: string) => void;
 };
 
-export function LegalLinkRow({ title }: LegalLinkRowProps) {
+export function LegalLinkRow({
+  title,
+  url,
+  onOpen,
+}: LegalLinkRowProps) {
   return (
     <Pressable
-      accessibilityLabel={`${title}. Bientôt disponible`}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: true }}
-      disabled
-      style={styles.row}>
+      accessibilityLabel={`Consulter ${title}`}
+      accessibilityRole="link"
+      onPress={() => onOpen(url)}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && styles.pressed,
+      ]}>
       <View style={styles.icon}>
-        <Ionicons name="document-text-outline" size={19} color={theme.colors.muted} />
+        <Ionicons
+          name="document-text-outline"
+          size={19}
+          color={theme.colors.yellow}
+        />
       </View>
+
       <Text style={styles.title}>{title}</Text>
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>Bientôt disponible</Text>
+
+      <View style={styles.action}>
+        <Text style={styles.actionText}>Consulter</Text>
+        <Ionicons
+          name="chevron-forward"
+          size={17}
+          color={theme.colors.yellow}
+        />
       </View>
     </Pressable>
   );
@@ -37,6 +56,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
     backgroundColor: theme.colors.secondary,
+  },
+  pressed: {
     opacity: 0.72,
   },
   icon: {
@@ -45,7 +66,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 11,
-    backgroundColor: 'rgba(154,167,201,0.08)',
+    backgroundColor: 'rgba(252,205,18,0.08)',
   },
   title: {
     minWidth: 0,
@@ -54,15 +75,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: 'rgba(154,167,201,0.1)',
+  action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
-  badgeText: {
-    color: theme.colors.muted,
-    fontSize: 9,
+  actionText: {
+    color: theme.colors.yellow,
+    fontSize: 10,
     fontWeight: '700',
   },
 });
