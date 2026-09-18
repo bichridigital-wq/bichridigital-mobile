@@ -45,6 +45,11 @@ export const emissionPlaylists: readonly EmissionPlaylist[] = [
     playlistId: 'PLROASFusaa6s',
     verified: true,
   },
+  {
+  slug: 'ettu-sport',
+  playlistId: 'PLGsAVY-hwJa8',
+  verified: true,
+},
 ];
 
 export function getPlaylistIdForEmission(slug: string): string | null {
