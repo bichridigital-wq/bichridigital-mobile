@@ -55,6 +55,26 @@ export const emissionPlaylists: readonly EmissionPlaylist[] = [
   playlistId: 'PLVu6UM-eu3-E',
   verified: true,
 },
+{
+  slug: 'seen-wergu-yaram',
+  playlistId: 'PLTbtsxXtWZ0o',
+  verified: true,
+},
+{
+  slug: 'xamxamu-cosaan',
+  playlistId: 'PLDdW1eyi7ui4',
+  verified: true,
+},
+{
+  slug: 'demb-ak-tay',
+  playlistId: 'PLSf_6dypfhn0',
+  verified: true,
+},
+{
+  slug: 'xam-ndiagne-jotna',
+  playlistId: 'PLeyAuEK978hM',
+  verified: true,
+},
 ];
 
 export function getPlaylistIdForEmission(slug: string): string | null {

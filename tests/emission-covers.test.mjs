@@ -17,7 +17,7 @@ function loadHelper(requireAsset) {
   return exports.getEmissionCoverSource;
 }
 
-test('all nine catalogue slugs resolve to their corresponding local image assets', () => {
+test('all covered catalogue slugs resolve to their corresponding local image assets', () => {
   const catalogueSource = readFileSync(new URL('../constants/emissions-content.ts', import.meta.url), 'utf8');
   const catalogue = {};
   runInNewContext(ts.transpileModule(catalogueSource, {
@@ -35,6 +35,8 @@ test('all nine catalogue slugs resolve to their corresponding local image assets
     'gattandu-magal': 'gattandu-maggal.png',
     'demb-ak-tay': 'demb-ak-tay.png',
 'apres-ndogou': 'apres-ndogou.png',
+'xamxamu-cosaan': 'xamxamu-cosaan.png',
+'entretien-special': 'entretien-special.png',
   };
   const assetIds = new Map();
   const getCover = loadHelper((path) => {

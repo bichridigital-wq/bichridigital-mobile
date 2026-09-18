@@ -12,6 +12,8 @@ const EMISSION_COVERS: Readonly<Record<string, number>> = {
   'gattandu-magal': require('../assets/images/program-covers/gattandu-maggal.png'),
   'demb-ak-tay': require('../assets/images/program-covers/demb-ak-tay.png'),
   'apres-ndogou': require('../assets/images/program-covers/apres-ndogou.png'),
+  'entretien-special': require('../assets/images/program-covers/entretien-special.png'),
+'xamxamu-cosaan': require('../assets/images/program-covers/xamxamu-cosaan.png'),
 };
 export function getEmissionCoverSource(slug: string): number | undefined {
   return Object.prototype.hasOwnProperty.call(EMISSION_COVERS, slug)
