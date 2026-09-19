@@ -2,7 +2,6 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import {
   Alert,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,23 +10,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BrandCard } from '@/components/more/brand-card';
-import { LegalLinkRow } from '@/components/more/legal-link-row';
-import { MoreLinkRow } from '@/components/more/more-link-row';
-import { NotificationPreferenceCard } from '@/components/more/notification-preference-card';
-import { SocialLinkGrid } from '@/components/more/social-link-grid';
 import { FollowedEmissionCard } from '@/components/profile/favorite-emission-card';
 import { FavoriteVideoCard } from '@/components/profile/favorite-video-card';
-import { NotificationDeviceStatusCard } from '@/components/profile/notification-device-status-card';
-import { NotificationDetailPreferences } from '@/components/profile/notification-detail-preferences';
 import { ProfileEmptyState } from '@/components/profile/profile-empty-state';
 import { ProfileSectionHeader } from '@/components/profile/profile-section-header';
 import { ProfileSummary } from '@/components/profile/profile-summary';
 import { AccountCard } from '@/components/profile/account-card';
 import { RecentVideoRow } from '@/components/profile/recent-video-row';
-import { usefulLinks } from '@/constants/more-content';
 import { theme } from '@/constants/theme';
-import { useNotifications } from '@/hooks/use-notifications';
 import { useUserLibrary } from '@/hooks/use-user-library';
 import { useAccountProgramSync } from '@/hooks/use-account-program-sync';
 import type {
@@ -35,13 +25,6 @@ import type {
   RecentlyWatchedVideo,
 } from '@/types/user-library';
 import { playRemoveHaptic } from '@/utils/haptics';
-
-const usefulLinkIcons = {
-  website: 'globe-outline',
-  services: 'briefcase-outline',
-  contact: 'chatbubble-ellipses-outline',
-  youtube: 'logo-youtube',
-} as const;
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -53,96 +36,8 @@ export default function ProfileScreen() {
     recentlyWatched,
     removeFavoriteVideo,
     clearRecentlyWatched,
-    clearAllLibraryData,
-    notificationPreferences,
-    setNotificationPreference,
   } = useUserLibrary();
   const { removeFollowedEmission } = useAccountProgramSync();
-  const {
-    permissionStatus,
-    notificationsEnabled,
-    isInitializing: isInitializingNotifications,
-    isRequestingPermission,
-    isSchedulingTest,
-    testFeedback,
-    lastError: notificationError,
-    enablePushNotifications,
-    unregisterPushNotifications,
-    retryPushRegistration,
-    syncPushPreferences,
-    openSystemSettings,
-    sendTestNotification,
-    pushRuntimeEnvironment,
-    pushAvailabilityReason,
-    pushRegistrationStatus,
-    preferenceSyncStatus,
-    installationIdStatus,
-    installationIdKind,
-    hasEasProjectId,
-    installationId,
-    isPushRegistered,
-    isPushOperationPending,
-    canAskPermissionAgain,
-    pushError,
-  } = useNotifications();
-
-  const maskedInstallationId = installationId
-    ? `••••••••-••••-••••-••••-${installationId.slice(-12)}`
-    : null;
-
-  const confirmPushUnregistration = () => {
-    Alert.alert(
-      'Désactiver les notifications Push ?',
-      'L’appareil sera désinscrit du serveur. Cette action ne révoque pas l’autorisation système et conserve vos choix locaux.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Désactiver',
-          style: 'destructive',
-          onPress: () => {
-            void unregisterPushNotifications().then((success) => {
-              if (success) {
-                Alert.alert('Notifications Push désactivées');
-              }
-            });
-          },
-        },
-      ],
-    );
-  };
-
-  const updateNotifications = async (enabled: boolean) => {
-    if (!enabled) {
-      confirmPushUnregistration();
-      return;
-    }
-
-    const status = await enablePushNotifications();
-    if (status === 'denied') {
-      Alert.alert(
-        'Notifications désactivées',
-        'L’autorisation a été refusée. Vous pouvez l’activer dans les réglages de votre appareil.',
-        [
-          { text: 'Plus tard', style: 'cancel' },
-          { text: 'Ouvrir les réglages', onPress: openSystemSettings },
-        ],
-      );
-    }
-  };
-
-  const openExternalUrl = async (url: string) => {
-    if (!url) {
-      return;
-    }
-    try {
-      if (await Linking.canOpenURL(url)) {
-        await Linking.openURL(url);
-      }
-    } catch {
-      // Official links are optional and must not interrupt the profile.
-    }
-  };
-
   const openVideo = (video: FavoriteVideo | RecentlyWatchedVideo) => {
     router.push({
       pathname: '/video/[videoId]',
@@ -172,36 +67,21 @@ export default function ProfileScreen() {
     );
   };
 
-  const confirmClearAll = () => {
-    Alert.alert(
-      'Effacer mes données locales ?',
-      'Vos favoris, votre historique et vos préférences seront supprimés uniquement de cet appareil.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Effacer',
-          style: 'destructive',
-          onPress: () => {
-            if (!isPushRegistered) {
-              clearAllLibraryData();
-              return;
-            }
-            void unregisterPushNotifications().then((success) => {
-              if (success) clearAllLibraryData();
-            });
-          },
-        },
-      ],
-    );
-  };
-
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.screenTitle}>Mon espace</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.screenTitle}>Mon espace</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Paramètres"
+              accessibilityHint="Ouvre les paramètres de Bichridigital"
+              onPress={() => router.push('/settings')}
+              style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}>
+              <Ionicons name="settings-outline" size={24} color={theme.colors.yellow} />
+            </Pressable>
+          </View>
           <Text style={styles.subtitle}>
             Retrouvez vos favoris et vos dernières vidéos.
           </Text>
@@ -212,7 +92,7 @@ export default function ProfileScreen() {
               size={16}
             />
             <Text style={styles.localNoticeText}>
-              Données enregistrées uniquement sur cet appareil
+              Certaines données sont enregistrées sur cet appareil
             </Text>
           </View>
         </View>
@@ -312,119 +192,6 @@ export default function ProfileScreen() {
               )}
             </View>
 
-            <View style={styles.section}>
-              <ProfileSectionHeader title="Préférences" />
-              <NotificationPreferenceCard
-                disabled={
-                  isInitializingNotifications ||
-                  isRequestingPermission ||
-                  isPushOperationPending
-                }
-                enabled={notificationsEnabled}
-                onValueChange={(enabled) => {
-                  void updateNotifications(enabled);
-                }}
-              />
-              {notificationsEnabled ? (
-                <NotificationDetailPreferences
-                  onChange={setNotificationPreference}
-                  preferences={notificationPreferences}
-                />
-              ) : null}
-              <NotificationDeviceStatusCard
-                enabled={notificationsEnabled}
-                isInitializing={isInitializingNotifications}
-                isSchedulingTest={isSchedulingTest}
-                isPushOperationPending={isPushOperationPending}
-                lastError={notificationError}
-                pushError={pushError}
-                canAskPermissionAgain={canAskPermissionAgain}
-                onEnablePush={() => {
-                  void enablePushNotifications();
-                }}
-                onOpenSettings={() => {
-                  void openSystemSettings();
-                }}
-                onRetryRegistration={() => {
-                  void retryPushRegistration();
-                }}
-                onRetrySync={() => {
-                  void syncPushPreferences();
-                }}
-                onSendTest={() => {
-                  void sendTestNotification();
-                }}
-                onUnregister={confirmPushUnregistration}
-                status={permissionStatus}
-                testFeedback={testFeedback}
-                pushRuntimeEnvironment={pushRuntimeEnvironment}
-                pushAvailabilityReason={pushAvailabilityReason}
-                pushRegistrationStatus={pushRegistrationStatus}
-                preferenceSyncStatus={preferenceSyncStatus}
-                installationIdStatus={installationIdStatus}
-                installationIdKind={installationIdKind}
-                hasEasProjectId={hasEasProjectId}
-                maskedInstallationId={maskedInstallationId}
-                isPushRegistered={isPushRegistered}
-              />
-            </View>
-
-            <View style={styles.divider} />
-            <ProfileSectionHeader title="Bichridigital et paramètres" />
-            <BrandCard />
-
-            <View style={styles.section}>
-              <ProfileSectionHeader title="Liens officiels" />
-              <View style={styles.list}>
-                {usefulLinks.map((link) => (
-                  <MoreLinkRow
-                    icon={usefulLinkIcons[link.id]}
-                    key={link.id}
-                    onPress={() => openExternalUrl(link.url)}
-                    subtitle={link.subtitle}
-                    title={link.title}
-                  />
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.section}>
-              <ProfileSectionHeader title="Réseaux sociaux" />
-              <SocialLinkGrid onOpen={openExternalUrl} />
-            </View>
-
-            <View style={styles.section}>
-              <ProfileSectionHeader title="Informations légales" />
-              <View style={styles.list}>
-                <LegalLinkRow
-  title="Mentions légales"
-  url="https://www.bichridigital.com/mentions-legales"
-  onOpen={openExternalUrl}
-/>
-
-<LegalLinkRow
-  title="Politique de confidentialité"
-  url="https://www.bichridigital.com/politique-confidentialite"
-  onOpen={openExternalUrl}
-/>
-              </View>
-            </View>
-
-            <Pressable
-              accessibilityLabel="Effacer mes données locales"
-              accessibilityRole="button"
-              onPress={confirmClearAll}
-              style={({ pressed }) => [
-                styles.resetButton,
-                pressed && styles.pressed,
-              ]}>
-              <Ionicons
-                color={theme.colors.muted}
-                name="trash-outline"
-                size={18}
-              />
-              <Text style={styles.resetText}>Effacer mes données locales</Text>
-            </Pressable>
           </View>
         )}
       </ScrollView>
@@ -457,7 +224,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
   },
-  screenTitle: { color: theme.colors.text, fontSize: 24, fontWeight: '900' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  settingsButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(252,205,18,0.25)', backgroundColor: theme.colors.secondary },
+  screenTitle: { flex: 1, color: theme.colors.text, fontSize: 24, fontWeight: '900' },
   subtitle: { color: theme.colors.muted, fontSize: 12, lineHeight: 18 },
   localNotice: {
     flexDirection: 'row',
@@ -478,19 +247,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
   },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
-  resetButton: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.09)',
-    backgroundColor: theme.colors.secondary,
-  },
-  resetText: { color: theme.colors.muted, fontSize: 12, fontWeight: '700' },
   pressed: { opacity: 0.75 },
   loadingContent: { gap: 14, paddingHorizontal: theme.spacing.lg },
   skeleton: {

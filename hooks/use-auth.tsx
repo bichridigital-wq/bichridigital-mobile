@@ -14,7 +14,7 @@ type Value = {
   signIn(email: string, password: string): Promise<void>;
   signUp(name: string, email: string, password: string): Promise<{ confirmationRequired: boolean }>;
   signOut(): Promise<void>; sendPasswordReset(email: string): Promise<void>;
-  updatePassword(password: string): Promise<void>; refreshProfile(): Promise<void>;
+  updatePassword(password: string): Promise<void>; refreshProfile(savedProfile?: AccountProfile): Promise<void>;
   handleRecoveryUrl(url: string): Promise<boolean>;
 };
 const Context = createContext<Value | null>(null);
@@ -58,7 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { listener.remove(); client.auth.stopAutoRefresh(); };
   }, []);
 
-  const refreshProfile = useCallback(async () => { if (session) await loadProfile(session); }, [loadProfile, session]);
+  const refreshProfile = useCallback(async (savedProfile?: AccountProfile) => {
+    if (!session) return;
+    // Reuse the confirmed PATCH response so returning to Profile needs no second request.
+    if (savedProfile) { setProfile(savedProfile); return; }
+    await loadProfile(session);
+  }, [loadProfile, session]);
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) throw new Error('AUTH_NOT_CONFIGURED');
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password }); if (error) throw error;

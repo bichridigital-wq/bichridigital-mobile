@@ -56,9 +56,12 @@ test('Recovery supports PKCE and token-session callbacks', async () => {
   assert.match(provider, /redirectTo: AUTH_REDIRECT_URLS\.passwordRecovery/);
 });
 
-test('Profile keeps existing sections and adds account card', async () => {
+test('Profile keeps account and library sections while settings owns preferences', async () => {
   const profile = await source('app/(tabs)/profil.tsx');
-  for (const marker of ['AccountCard', 'ProfileSummary', 'NotificationDeviceStatusCard', 'Effacer mes données locales']) assert.match(profile, new RegExp(marker));
+  for (const marker of ['AccountCard', 'ProfileSummary', 'FavoriteVideoCard', 'FollowedEmissionCard', 'RecentVideoRow', 'confirmClearHistory']) assert.match(profile, new RegExp(marker));
+  assert.doesNotMatch(profile, /NotificationDeviceStatusCard|Effacer mes données locales/);
+  const settings = await source('app/settings.tsx');
+  for (const marker of ['NotificationDeviceStatusCard', 'NotificationPreferenceCard', 'Effacer mes données locales', 'BrandCard', 'SocialLinkGrid']) assert.match(settings, new RegExp(marker));
 });
 
 test('Auth does not link devices, sync follows, or invoke push', async () => {

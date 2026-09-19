@@ -116,7 +116,7 @@ export function NotificationDeviceStatusCard(props: Props) {
           </Text>
         </View>
       </View>
-      <View style={styles.pushDetails}>
+      {__DEV__ ? <View style={styles.pushDetails}>
         <Text style={styles.detail}>Environnement : {runtimeLabels[props.pushRuntimeEnvironment]}</Text>
         <Text style={styles.detail}>Push distant : {availabilityLabels[props.pushAvailabilityReason]}</Text>
         <Text style={styles.detail}>Permission : {permissionLabels[props.status]}</Text>
@@ -130,14 +130,16 @@ export function NotificationDeviceStatusCard(props: Props) {
         </Text>
         <Text style={styles.detail}>Inscription serveur : {registrationLabels[props.pushRegistrationStatus]}</Text>
         <Text style={styles.detail}>Préférences : {syncLabels[props.preferenceSyncStatus]}</Text>
-      </View>
-      {props.pushRuntimeEnvironment === 'expo-go' ? (
+      </View> : null}
+      {__DEV__ && props.pushRuntimeEnvironment === 'expo-go' ? (
         <Text style={styles.warning}>Expo Go ne permet pas le Push distant sur Android. Utilisez une development build.</Text>
       ) : null}
       {props.lastError || props.pushError ? (
-        <Text accessibilityRole="alert" style={styles.error}>{props.pushError ?? props.lastError}</Text>
+        <Text accessibilityRole="alert" style={styles.error}>
+          {__DEV__ ? props.pushError ?? props.lastError : 'Les notifications sont momentanément indisponibles. Veuillez réessayer.'}
+        </Text>
       ) : null}
-      {props.testFeedback === 'scheduled' ? (
+      {__DEV__ && props.testFeedback === 'scheduled' ? (
         <Text accessibilityRole="alert" style={styles.feedback}>Notification locale de test programmée.</Text>
       ) : null}
       <View style={styles.actions}>
@@ -156,7 +158,7 @@ export function NotificationDeviceStatusCard(props: Props) {
         {props.status === 'denied' && !props.canAskPermissionAgain ? (
           <ActionButton label="Ouvrir les réglages" onPress={props.onOpenSettings} />
         ) : null}
-        {props.status === 'granted' && props.enabled ? (
+        {__DEV__ && props.status === 'granted' && props.enabled ? (
           <ActionButton disabled={props.isSchedulingTest} label={props.isSchedulingTest ? 'Programmation…' : 'Notification locale de test'} onPress={props.onSendTest} />
         ) : null}
       </View>

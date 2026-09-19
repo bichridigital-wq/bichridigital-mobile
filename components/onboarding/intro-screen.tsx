@@ -41,23 +41,24 @@ export function IntroScreen({ onEnter }: { onEnter: () => Promise<void> }) {
   };
   return (
     <View style={styles.screen}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <Image accessible={false} contentFit="cover" contentPosition="center"
+          source={require('@/assets/images/brand/new-intro-cover.png')} style={StyleSheet.absoluteFill} />
+        <NightGradient variant="intro" />
+      </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[
-        styles.scroll, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20, paddingLeft: insets.left + 24, paddingRight: insets.right + 24 },
+        styles.scroll, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12, paddingLeft: insets.left + 24, paddingRight: insets.right + 24 },
       ]}>
         <View style={styles.content}>
-          <Text style={styles.eyebrow}>NDIAGNE · NOS GENS · NOS VALEURS</Text>
+          <Text style={styles.eyebrow}>NDIAGNE · TOUBA · SÉNÉGAL</Text>
           <View style={styles.logo}><BrandLogo width={220} /></View>
           <Text style={styles.tagline}>LA TÉLÉ AUTREMENT</Text>
-          <Text style={styles.description}>Toute l’actualité de Ndiagne{ '\n' }et vos émissions préférées</Text>
+          <Text style={styles.description}>
+            Toute l’actualité de Ndiagne,{ '\n' }
+            <Text style={styles.statementAccent}>du Sénégal</Text> et vos émissions préférées.
+          </Text>
 
           <View style={styles.scene}>
-            <Image accessible accessibilityLabel="La mosquée de Ndiagne" contentFit="cover"
-              source={require('@/assets/images/brand/mosquee-ndiagne.jpg')} style={StyleSheet.absoluteFill} />
-            <View pointerEvents="none" style={styles.blueOverlay} />
-            <NightGradient variant="intro" />
-            <View pointerEvents="none" style={styles.arcBlue} />
-            <View pointerEvents="none" style={styles.arcGold} />
-            <View pointerEvents="none" style={styles.pattern} />
             <View style={styles.location}>
               <View style={styles.locationLine} />
               <Text style={styles.locationText}>NDIAGNE{ '\n' }CONNECTÉ{ '\n' }AU MONDE</Text>
@@ -100,24 +101,20 @@ export function IntroScreen({ onEnter }: { onEnter: () => Promise<void> }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.colors.background },
   scroll: { flexGrow: 1, justifyContent: 'center' },
-  content: { width: '100%', maxWidth: 560, alignSelf: 'center' },
+  content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center' },
   eyebrow: { color: '#BDC8E5', textAlign: 'center', fontSize: 10, letterSpacing: 2, fontWeight: '600' },
-  logo: { alignItems: 'center', marginTop: 20, marginBottom: 8 },
+  logo: { alignItems: 'center', marginTop: 12, marginBottom: 8 },
   tagline: { color: theme.colors.yellow, textAlign: 'center', fontSize: 11, letterSpacing: 3, fontWeight: '700' },
-  description: { color: '#E2E8FA', textAlign: 'center', fontSize: 15, lineHeight: 23, marginTop: 16 },
-  scene: { width: '100%', aspectRatio: 1.7, marginTop: 16, overflow: 'hidden', borderRadius: 24 },
-  blueOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(2,11,46,0.28)' },
-  arcBlue: { position: 'absolute', width: '120%', height: '160%', left: '-10%', top: '8%', borderRadius: 999, borderWidth: 2, borderColor: 'rgba(61,100,255,0.6)', transform: [{ rotate: '-18deg' }] },
-  arcGold: { position: 'absolute', width: '130%', height: '170%', left: '-15%', top: '20%', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(252,205,18,0.5)', transform: [{ rotate: '18deg' }] },
-  pattern: { position: 'absolute', width: 72, height: 72, right: -24, top: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', transform: [{ rotate: '45deg' }] },
-  location: { position: 'absolute', bottom: 16, left: 18, flexDirection: 'row', gap: 10, alignItems: 'center' },
-  locationLine: { width: 2, height: 32, backgroundColor: theme.colors.yellow },
-  locationText: { color: 'white', fontSize: 9, lineHeight: 13, letterSpacing: 2, fontWeight: '700' },
+  description: { color: '#E2E8FA', textAlign: 'center', fontSize: 15, lineHeight: 23, marginTop: 12 },
+  scene: { flexGrow: 1, minHeight: 140, justifyContent: 'center', paddingVertical: 24 },
+  location: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  locationLine: { width: 2, height: 46, backgroundColor: theme.colors.yellow },
+  locationText: { color: 'white', fontSize: 11, lineHeight: 17, letterSpacing: 2, fontWeight: '800', textShadowColor: '#020B2E', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
   worlds: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 12 },
   world: { flexGrow: 1, flexBasis: 65, alignItems: 'center', gap: 8 },
-  worldIcon: { width: 42, height: 42, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(252,205,18,0.16)', backgroundColor: '#0B1740', alignItems: 'center', justifyContent: 'center' },
-  worldText: { color: '#D6DFF4', textAlign: 'center', fontSize: 11, lineHeight: 16 },
-  statement: { marginTop: 24, marginBottom: 22 },
+  worldIcon: { width: 42, height: 42, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(252,205,18,0.3)', backgroundColor: 'rgba(11,23,64,0.8)', alignItems: 'center', justifyContent: 'center' },
+  worldText: { color: '#E2E8FA', textAlign: 'center', fontSize: 11, lineHeight: 16, textShadowColor: '#020B2E', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  statement: { marginTop: 20, marginBottom: 18 },
   statementText: { color: 'white', textAlign: 'center', fontSize: 25, lineHeight: 33, fontWeight: '800', letterSpacing: -0.6 },
   statementAccent: { color: theme.colors.yellow },
   enter: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 16, borderRadius: 20, backgroundColor: theme.colors.primary, borderWidth: 1, borderColor: 'rgba(252,205,18,0.5)', boxShadow: '0 4px 22px rgba(0,36,255,0.28)' },
