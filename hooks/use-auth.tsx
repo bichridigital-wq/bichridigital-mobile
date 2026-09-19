@@ -1,19 +1,20 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
-import { supabase, isAuthConfigured } from '@/lib/supabase';
+import { clearPersistedSupabaseSession, supabase, isAuthConfigured } from '@/lib/supabase';
 import { AUTH_REDIRECT_URLS } from '@/lib/auth-redirects';
-import { getMe, updateDisplayName } from '@/services/account';
+import { deleteMyAccount, getMe, updateDisplayName } from '@/services/account';
 import { authStorage, PENDING_DISPLAY_NAME_KEY } from '@/services/auth-storage';
 import type { AccountProfile } from '@/types/account';
 import { unlinkAccountDeviceBeforeSignOut } from '@/services/account-device-link';
+import { clearAccountProgramSyncOutbox } from '@/services/account-program-sync-storage';
 
 type Value = {
   user: User | null; session: Session | null; profile: AccountProfile | null;
   isRestoring: boolean; isAuthenticated: boolean; isConfigured: boolean;
   signIn(email: string, password: string): Promise<void>;
   signUp(name: string, email: string, password: string): Promise<{ confirmationRequired: boolean }>;
-  signOut(): Promise<void>; sendPasswordReset(email: string): Promise<void>;
+  signOut(): Promise<void>; deleteAccount(): Promise<void>; sendPasswordReset(email: string): Promise<void>;
   updatePassword(password: string): Promise<void>; refreshProfile(savedProfile?: AccountProfile): Promise<void>;
   handleRecoveryUrl(url: string): Promise<boolean>;
 };
@@ -86,6 +87,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signOut(); if (error) throw error;
     await authStorage.removeItem(PENDING_DISPLAY_NAME_KEY); setSession(null); setProfile(null);
   }, [session]);
+  const deleteAccount = useCallback(async () => {
+    if (!supabase || !session) throw new Error('AUTH_REQUIRED');
+    await deleteMyAccount(session.access_token);
+
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    await clearPersistedSupabaseSession();
+    await authStorage.removeItem(PENDING_DISPLAY_NAME_KEY);
+    await clearAccountProgramSyncOutbox().catch(() => undefined);
+
+    setSession(null);
+    setProfile(null);
+
+    if (error && __DEV__) {
+      console.warn('Supabase local sign-out reported an error after account deletion.');
+    }
+  }, [session]);
   const sendPasswordReset = useCallback(async (email: string) => {
     if (!supabase) throw new Error('AUTH_NOT_CONFIGURED');
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: AUTH_REDIRECT_URLS.passwordRecovery }); if (error) throw error;
@@ -100,8 +117,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return Boolean(access_token && refresh_token && !(await supabase.auth.setSession({ access_token, refresh_token })).error);
   }, []);
   const value = useMemo<Value>(() => ({ user: session?.user ?? null, session, profile, isRestoring, isAuthenticated: Boolean(session), isConfigured: isAuthConfigured,
-    signIn, signUp, signOut, sendPasswordReset, updatePassword, refreshProfile, handleRecoveryUrl,
-  }), [session, profile, isRestoring, signIn, signUp, signOut, sendPasswordReset, updatePassword, refreshProfile, handleRecoveryUrl]);
+    signIn, signUp, signOut, deleteAccount, sendPasswordReset, updatePassword, refreshProfile, handleRecoveryUrl,
+  }), [session, profile, isRestoring, signIn, signUp, signOut, deleteAccount, sendPasswordReset, updatePassword, refreshProfile, handleRecoveryUrl]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useAuth() { const value = useContext(Context); if (!value) throw new Error('useAuth must be used within AuthProvider.'); return value; }
