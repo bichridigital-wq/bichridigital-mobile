@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import {
   Alert,
   Linking,
@@ -21,8 +22,10 @@ import { NotificationDetailPreferences } from '@/components/profile/notification
 import { ProfileSectionHeader } from '@/components/profile/profile-section-header';
 import { usefulLinks } from '@/constants/more-content';
 import { theme } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useUserLibrary } from '@/hooks/use-user-library';
+import { ApiClientError } from '@/services/api-client';
 
 const usefulLinkIcons = {
   website: 'globe-outline',
@@ -33,6 +36,8 @@ const usefulLinkIcons = {
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const { isAuthenticated, deleteAccount } = useAuth();
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const { isHydrated, clearAllLibraryData, notificationPreferences, setNotificationPreference } = useUserLibrary();
   const {
     permissionStatus,
@@ -142,6 +147,46 @@ export default function SettingsScreen() {
     );
   };
 
+  const performAccountDeletion = async () => {
+    if (isDeletingAccount) return;
+    setIsDeletingAccount(true);
+    try {
+      await deleteAccount();
+      Alert.alert(
+        'Compte supprimé',
+        'Votre compte Bichridigital a été supprimé définitivement.',
+        [{ text: 'OK', onPress: () => router.replace('/(tabs)/profil') }],
+      );
+    } catch (failure) {
+      let message = 'La suppression du compte a échoué. Réessayez dans un instant.';
+      if (failure instanceof ApiClientError && failure.kind === 'network') {
+        message = 'Impossible de supprimer le compte hors connexion. Vérifiez votre connexion puis réessayez.';
+      } else if (failure instanceof ApiClientError && failure.status === 401) {
+        message = 'Votre session a expiré. Reconnectez-vous avant de supprimer votre compte.';
+      }
+      Alert.alert('Compte non supprimé', message);
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
+  const confirmAccountDeletion = () => {
+    Alert.alert(
+      'Supprimer mon compte ?',
+      'Cette action est définitive. Votre compte et les données associées côté serveur seront supprimés. Vos favoris et votre historique enregistrés uniquement sur cet appareil ne sont pas effacés par cette action.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer définitivement',
+          style: 'destructive',
+          onPress: () => {
+            void performAccountDeletion();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
       <View style={styles.header}>
@@ -212,6 +257,35 @@ export default function SettingsScreen() {
                 isPushRegistered={isPushRegistered}
               />
             </View>
+
+            {isAuthenticated ? (
+              <View style={styles.section}>
+                <ProfileSectionHeader title="Compte" />
+                <View style={styles.accountDangerCard}>
+                  <View style={styles.accountDangerCopy}>
+                    <Text style={styles.accountDangerTitle}>Supprimer mon compte</Text>
+                    <Text style={styles.accountDangerText}>
+                      Suppression définitive du compte Bichridigital et des données associées côté serveur.
+                    </Text>
+                  </View>
+                  <Pressable
+                    accessibilityLabel="Supprimer mon compte"
+                    accessibilityRole="button"
+                    accessibilityState={{ busy: isDeletingAccount, disabled: isDeletingAccount }}
+                    disabled={isDeletingAccount}
+                    onPress={confirmAccountDeletion}
+                    style={({ pressed }) => [
+                      styles.deleteAccountButton,
+                      (pressed || isDeletingAccount) && styles.pressed,
+                    ]}>
+                    <Ionicons color="#FF7A85" name="trash-outline" size={18} />
+                    <Text style={styles.deleteAccountText}>
+                      {isDeletingAccount ? 'Suppression…' : 'Supprimer mon compte'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
 
             <View style={styles.divider} />
             <ProfileSectionHeader title="Bichridigital" />
@@ -299,5 +373,28 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary,
   },
   resetText: { color: theme.colors.muted, fontSize: 12, fontWeight: '700' },
+  accountDangerCard: {
+    gap: 14,
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,122,133,0.35)',
+    backgroundColor: theme.colors.secondary,
+  },
+  accountDangerCopy: { gap: 6 },
+  accountDangerTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '800' },
+  accountDangerText: { color: theme.colors.muted, fontSize: 12, lineHeight: 18 },
+  deleteAccountButton: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,122,133,0.55)',
+    backgroundColor: 'rgba(255,122,133,0.08)',
+  },
+  deleteAccountText: { color: '#FF7A85', fontSize: 13, fontWeight: '800' },
   pressed: { opacity: 0.75 },
 });
