@@ -79,3 +79,10 @@ export function markAccountProgramSyncSuccessful() {
     lastSuccessfulSyncAt: new Date().toISOString(),
   }));
 }
+
+export function clearAccountProgramSyncOutbox() {
+  storageQueue = storageQueue
+    .catch(() => undefined)
+    .then(() => AsyncStorage.removeItem(ACCOUNT_PROGRAM_SYNC_STORAGE_KEY));
+  return storageQueue;
+}
