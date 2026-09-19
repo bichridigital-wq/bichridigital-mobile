@@ -68,3 +68,24 @@ test('Auth does not link devices, sync follows, or invoke push', async () => {
   const provider = await source('hooks/use-auth.tsx');
   assert.doesNotMatch(provider, /link-device|unlink-device|program-subscriptions|useNotifications|ExpoPushToken/);
 });
+
+test('Account deletion is server-first and clears only account-specific auth/sync state', async () => {
+  const account = await source('services/account.ts');
+  const provider = await source('hooks/use-auth.tsx');
+  const settings = await source('app/settings.tsx');
+  const start = provider.indexOf('const deleteAccount');
+  const end = provider.indexOf('const sendPasswordReset', start);
+  const deletion = provider.slice(start, end);
+
+  assert.match(account, /apiDelete<\{ deleted: true \}>\('\/me'/);
+  assert.match(deletion, /await deleteMyAccount\(session\.access_token\)/);
+  assert.match(deletion, /signOut\(\{ scope: 'local' \}\)/);
+  assert.match(deletion, /clearPersistedSupabaseSession/);
+  assert.match(deletion, /clearAccountProgramSyncOutbox/);
+  assert.doesNotMatch(deletion, /clearAllLibraryData/);
+
+  assert.match(settings, /Supprimer mon compte/);
+  assert.match(settings, /Supprimer définitivement/);
+  assert.match(settings, /Compte non supprimé/);
+  assert.match(settings, /favoris et votre historique enregistrés uniquement sur cet appareil ne sont pas effacés/);
+});
